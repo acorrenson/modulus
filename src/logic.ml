@@ -2,6 +2,7 @@ open Sat
 
 type term =
   | Var of int
+  | Cst of int
 
 type atom =
   | Eq of term * term
@@ -11,6 +12,29 @@ type formula =
   | And of formula * formula
   | Neg of formula
   | Atom of atom
+
+
+module VSet = Set.Make (Int)
+
+let tvars (t : term) : VSet.t =
+  match t with
+  | Var x -> VSet.singleton x
+  | _ -> VSet.empty
+
+let avars (a : atom) : VSet.t =
+  match a with
+  | Eq (t1, t2) -> VSet.union (tvars t1) (tvars t2)
+
+let rec vars (f : formula) : VSet.t =
+  match f with
+  | Or (f1, f2) -> VSet.union (vars f1) (vars f2)
+  | And (f1, f2) -> VSet.union (vars f1) (vars f2)
+  | Neg f1 -> vars f1
+  | Atom a -> avars a
+
+let are_independants (al : atom list) : bool =
+  let collect acc a = VSet.inter acc (avars a) in
+  List.fold_left collect VSet.empty al |> VSet.is_empty
 
 module Cnf = struct
   type t =
@@ -66,3 +90,15 @@ let to_cnf (form : formula) : cnf * vmap =
       if s then [[!i]] else [[-(!i)]]
   in
   to_cnf_aux (cnf_pass_neg true form), h
+
+(**
+
+(x = 1) /\ ((x = 2) \/ (x = 1))
+
+[Sat] I found a pre-model [x = 1, x = 2]
+[LIA] I try to solve [x = 1, x = 2].... and I fail
+[Sat] Ok I compute an other pre-model [x = 1, x = 1]
+[LIA] I try to solve [x = 1, x = 1].... and OK
+-> SAT !!
+
+*)
