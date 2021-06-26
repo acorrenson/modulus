@@ -1,3 +1,10 @@
+(**
+  {1 Lia}
+  The Modulus internal solver for LIA
+
+  Disclaimer : this module is a "work in progress"
+*)
+
 open Logic
 
 type anwser = SAT | UNSAT | UNKNOWN

@@ -1,4 +1,5 @@
 (include_subdirs unqualified)
 
 (library
- (name modulus))
+ (public_name modulus.modulus_lib)
+ (name modulus_lib))
