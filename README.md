@@ -7,7 +7,7 @@ A SMT solver from the ground up
 SMT solvers are magical tools that are massively used in various domains of Computer Science & especially in formal verification. This magic comes at a price : SMT solvers are incredibly complex creatures. This can be explained for 2 principal reasons :
 1. Writing a solver (in general) is incredibly hard because their principal purpose  is to provide a generic way to solve difficult problems
 2. SMT solvers are capable to deal with a lot of rich theories & are thereby composed of many domain-specific solvers which theme-selfs are hard to develop.
-3. The 2 previous points implies that assemble all the components required to build a SMT is a real software engineering challenge
+3. Assemble all the components required to build a SMT is a real software engineering challenge
 
 Modulus is an attempt at developing a tiny SMT in OCaml from scratch with NO dependencies other than the OCaml standard library. It requires many components :
 
