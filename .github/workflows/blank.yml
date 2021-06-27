@@ -30,13 +30,10 @@ jobs:
         with:
           ocaml-version: 4.12.0
       
-      - name: Deps
+      - name: Build
         run: |
           eval $(opam env)
           opam install dune
-      
-      - name: Build
-        run: |
           dune build
           dune build @doc
       
