@@ -38,7 +38,10 @@ let rec vars (f : formula) : VSet.t =
 
 let are_independants (al : atom list) : bool =
   let collect acc a = VSet.inter acc (avars a) in
-  List.fold_left collect VSet.empty al |> VSet.is_empty
+  match al with
+  | [] -> true
+  | a::al ->
+    List.fold_left collect (avars a) al |> VSet.is_empty
 
 module Cnf = struct
   type t =

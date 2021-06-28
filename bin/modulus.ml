@@ -1,1 +1,2 @@
-(* open Modulus_lib.Logic *)
+(* open Modulus_lib.Smtlib *)
+

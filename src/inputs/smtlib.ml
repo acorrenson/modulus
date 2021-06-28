@@ -1,17 +1,5 @@
 open Logic
 
-type loc = int
-
-type sexp =
-  | Slist of loc * sexp list
-  | Ssym of loc * string
-  | Sint of loc * int
-
-let get_loc = function
-  | Slist (l, _) -> l
-  | Ssym (l, _) -> l
-  | Sint (l, _) -> l
-
 type command =
   | Assert of atom
   | GetModel
@@ -20,43 +8,70 @@ type command =
 
 type smt_script = command list
 
-let term_of_sexp s =
-  match s with
-  | Sint (_, i) -> Cst i
-  | _ ->
-    failwith (Printf.sprintf "expected term @ line %d\n" (get_loc s))
+type 'a parser = string -> ('a * string) option
 
-let atom_of_sexp s =
-  match s with
-  | Slist (_, [Ssym (_, "="); x; y]) ->
-    Eq (term_of_sexp x, term_of_sexp y)
-  | Slist (l, Ssym (_, "=")::args) ->
-    failwith (Printf.sprintf "'=' expects 2 arguments, got %d @ line %d\n" (List.length args) l)
-  | _ ->
-    failwith (Printf.sprintf "expected atom @ line %d\n" (get_loc s))
+let pred (p : char -> bool) : char parser = fun s ->
+  if String.length s = 0 then None
+  else if p s.[0] then Some (s.[0], String.sub s 1 (String.length s - 1))
+  else None
 
-let command_of_sexpr s =
-  match s with
-  | Slist (_, Ssym (l, "assert")::args) ->
-    if List.length args = 1 then Assert (atom_of_sexp (List.hd args))
-    else
-      failwith (Printf.sprintf "'assert' expects 1 argument @ line %d\n" l)
-  | Slist (_, Ssym (l, "check-sat")::args) ->
-    if List.length args = 0 then CheckSat
-    else
-      failwith (Printf.sprintf "'check-sat' expects 0 arguments @ line %d\n" l)
-  | Slist (l, Ssym (_, c)::_) ->
-    failwith (Printf.sprintf "unsupported command '%s' @ line %d\n" c l)
-  | Ssym _ | Sint _ ->
-    failwith (Printf.sprintf "a symbol is not a command (forgot '(' ')' ?) @ line %d\n" (get_loc s))
-  | _ ->
-    failwith (Printf.sprintf "invalid or insupported command @ line %d\n" (get_loc s))
+let char (c : char) : char parser = pred ((=) c)
+
+let alpha : char parser = pred (function 'a'..'z' | 'A'..'Z' -> true | _ -> false)
+
+let digit : char parser = pred (function '0'..'9' -> true | _ -> false)
 
 
-let script_of_sexp s =
-  match s with
-  | Slist (_, l) ->
-    List.map command_of_sexpr l
-  | _ ->
-    failwith (Printf.sprintf "a symbol is not a command (forgot '(' ')' ?) @ line %d\n" (get_loc s))
 
+let rec many (p : 'a parser) (s : string) =
+  match p s with
+  | None -> Some ([], s)
+  | Some (x, r) ->
+    match many p r with
+    | None -> Some ([x], r)
+    | Some (xs, r) -> Some (x::xs, r)
+
+let (>>=) (p : 'a parser) (f : 'a -> 'b parser) : 'b parser = fun s ->
+  match p s with
+  | None -> None
+  | Some (x, r) -> f x r
+
+let return (x : 'a) : 'a parser = fun s -> Some (x, s)
+
+let many1 (p : 'a parser) =
+  p >>= (fun x -> many p >>= fun xs -> return (x::xs))
+
+let (<|>) (p : 'a parser) (q : 'a parser) : 'a parser = fun s ->
+  match p s with
+  | None -> q s
+  | _ as r -> r
+
+let (=>) (p : 'a parser) (f : 'a -> 'b) : 'b parser =
+  p >>= (fun x -> return (f x))
+
+let (>>) (p : 'a parser) (q : 'b parser) : 'b parser =
+  p >>= (fun _ -> q)
+
+let (<<) (p : 'a parser) (q : 'b parser) : 'a parser =
+  p >>= (fun x -> q >>= fun _ -> return x)
+
+let var : term parser = alpha >> digit => (fun x -> Var (int_of_char x - int_of_char '0'))
+
+let parens (p : 'a parser) : 'a parser =
+  char '(' >> p << char ')'
+
+let blank = many1 (char ' ' <|> char '\n' <|> char '\t' <|> char '\r')
+
+let explode s =
+  let rec exp i l =
+    if i < 0 then l else exp (i - 1) (s.[i] :: l) in
+  exp (String.length s - 1) []
+
+let symbol s =
+  match explode s with
+  | [] -> failwith "empty symbol"
+  | x::xs ->
+    List.fold_left (>>) (char x) (List.map char xs)
+
+let p_atom =
+  parens (char '=' >> blank >> var << blank >>= fun x -> var >>= fun y -> return (Eq (x, y)))
