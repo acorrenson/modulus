@@ -1,0 +1,4 @@
+(executable
+ (name modulus)
+ (public_name modulus)
+ (libraries modulus_lib))

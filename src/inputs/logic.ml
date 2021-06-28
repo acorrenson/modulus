@@ -1,5 +1,9 @@
 open Sat
 
+type ttype =
+  | Int
+  | Bool
+
 type term =
   | Var of int
   | Cst of int
