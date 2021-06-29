@@ -22,7 +22,7 @@
   </ul>
   <h2>Une introduction extrêmement rapide aux problèmes SAT, SMT et à leurs liens</h2>
   <p>
-    Les solveurs SMT peuvent-être vus comme des machines capable de résoudre le problème suivant :
+    Les solveurs SMT peuvent-être vus comme des machines capables de résoudre le problème suivant :
   <ul>
     <li><b>Entrée</b> : une formule de la logique faisant intervenir des théories spécifiques. <br> Par
       exemple la formule <math>(x &le; 2) &and; (x &ge; 10)</math> faisant intervenir la théorie de l'arithmétique
@@ -36,25 +36,27 @@
   la fois <math>n &le; 2</math> et <math>n &ge; 10</math>.
   </p>
   <p>
-    Toutefois, les solveurs SMT sont généralement conçu comme une extension d'un solveur SAT, c'est à dire des solveurs
+    Toutefois, les solveurs SMT sont généralement conçus comme une extension d'un solveur SAT, c'est à dire des solveurs
     qui se limite à la résolution de formules booléennes :
   <ul>
     <li><b>Entrée</b> : une formule de la logique booléenne, par exemple <math>(x &or; &not;y)</math> (<math>x, y
         &isin; {vrai, faux}</math>).
     </li>
-    <li><b>Sortie</b> : <i>"Oui"</i> si il existe une valeur de vérité (vrai ou faux) pour les variables telle que la
+    <li><b>Sortie</b> : <i>"Oui"</i> s'il existe une valeur de vérité (vrai ou faux) pour les variables telle que la
       formule
       est vraie. <i>"Non"</i> sinon.
     </li>
   </ul>
-  Pour la formule d'exemple, le solveur répond <i>"Oui"</i> car <math>y := faux</math> est une solution.
+  Pour la formule de l'exemple, le solveur répond <i>"Oui"</i> car <math>y := faux</math> est une solution.
   </p>
   <h3>Communication entre un solveur SAT et un solveur spécialisé dans une théorie</h3>
   <p>
     Pour se simplifier la tâche dans un premier temps, supposons que nous avons sous la main un solveur
-    <math>S</math> qui prend en entrée une liste de formules de l'arithmetique linéaire et qui répond <i>"Oui"</i> s'il
-    existe affectation des variables qui satisfait toutes ces formules en même temps. On suppose également que nous
-    disposons d'un bon solveur SAT. On peut maintenant construire un prototype de solveur SMT.
+    <math>S</math> qui prend en entrée un ensemble de formules de l'arithmétique sur les nombres entiers et qui répond
+    <i>"Oui"</i> s'il
+    existe une affectation des variables qui satisfait toutes ces formules en même temps. On suppose également que nous
+    disposons d'un bon solveur SAT. Nous allons voir que ces deux élements suffisent à construire un prototype de
+    solveur SMT.
   </p>
   <p>
     Étant donné une formule en entrée d'un solveur SMT, on peut commencer par ignorer les sous-formules
@@ -71,7 +73,7 @@
     Dans notre exemple, le solveur SAT répond "Oui" et peut donner comme solution <math>X :=
       vrai, Y :=
       faux</math>. On demande ensuite au solveur
-    spécialisé S si il est effectivement possible de rendre <math>X</math> vraie et <math>Y</math> fausse en même temps
+    spécialisé S s'il est effectivement possible de rendre <math>X</math> vraie et <math>Y</math> fausse en même temps
     (ce qui est
     équivalent à rendre <math>X</math> et <math>&not;Y</math> vraies en même temps donc <math>1
       &ne;
@@ -79,7 +81,7 @@
     Bien entendu, la réponse est <i>"Non"</i>. Toutefois, on peut ré-interroger le solveur SAT pour savoir s'il existe
     une autre solution. Dans
     notre cas, <math>X := faux, Y := vrai</math> est également une solution de la formule booléenne. On peut à nouveau
-    demander au solveur S si il est possible de rendre <math>X</math> fausse et <math>Y</math> vraie. Cette
+    demander au solveur S s'il est possible de rendre <math>X</math> fausse et <math>Y</math> vraie. Cette
     fois-ci la réponse
     est <i>"Oui"</i> et une solution (d'ailleurs unique) au problème est <math>x := 10</math>. Si le solveur SAT ne
     trouve jamais de solution, on sait que la formule est fondamentalement fausse indépendamment du solveur.
@@ -103,48 +105,23 @@
   </pre></code>
   <p>
     Dans la littérature scientifique, cette méthode algorithmique pour résoudre les problèmes SMT est connue sous le nom
-    de "DPLL(T)". Ce nom provient de l'algorithme DPLL qui est un algorithme bien connu pour résoudre le problème SAT
-    que l'on étend à avec une théorie T moyennant un solveur spécialisé pour cette théorie.
+    de "DPLL(T)". Ce nom provient de l'algorithme DPLL qui est un algorithme bien connu pour résoudre le problème SAT.
+    Comme nous venons de le voir, on peut étendre cet algorithme pour la résolution de formules d'une théorie T
+    moyennant un solveur spécialisé pour cette théorie.
   </p>
   <h3>Résumé</h3>
   En résumé de ce court article introductif : les solveurs SMT sont des bestioles vâchement compliquées mais on peut
   s'en sortir en se rattachant à des problèmes plus simples comme SAT. En particulier on a vu qu'un bon solveur SAT
   était une pièce maîtresse dans un solveur SMT, c'est donc l'une des premières choses que nous allons développer dans
   les semaines à venir.
-  <!-- <p>
-    Sans perte de généralité, on peut supposer que les formules en entrée sont en forme normale normale conjonctive,
-    c'est à dire de la forme <math>(a1 ou a2 ou ... aN) et (b1 ou b2 ou ... bM) ...</math> avec <math>ai</math> une
-    variable (<math>x</math>) ou la négation d'une variable (<math>non x</math>). Il
-    existe
-    un des algorithmes
-    efficaces qui transforment toute formule en une formule équivalente sous cette forme.
-  </p>
-  <code><pre>
-    (* Type des formules *)
-    type formula =
-      | Var of int
-      | Neg of int
-      | And of formula * formula
-      | Or of formula * formula
-  </pre></code>
-  <code><pre>
-    (* Type des formules simplifiées, la négation est distribuées sur les variables *)
-    type sformula =
-      | Lit of int
-      | And of formula * formula
-      | Or of formula * formula
-  </pre></code>
-  <code><pre>
-    (* Clauses et formes normales conjonctive *)
-    type clause = int list
-    type cnf = clause list
-  </pre></code>
-  <code><pre>
-    let rec formula_to_sformula (f : formula) : formula' = ...
 
-    let rec sformula_to_cnf (f : sformula) : formula' = ...
-    
-    let rec formula_to_cnf (f : formula) : cnf =
-      f |> formula_to_sformula |> sformula_to_cnf
-  </pre></code> -->
+  <h3>Références</h3>
+
+  <ul>
+    <li><a href="https://en.wikipedia.org/wiki/DPLL(T)">Wikipédia, DPLL(T)</a></li>
+    <li><a href="https://fr.wikipedia.org/wiki/Satisfiability_modulo_theories">Wikipédia, Satisfiability modulo
+        theories</a></li>
+    <li><a href="https://fr.wikipedia.org/wiki/Probl%C3%A8me_SAT">Wikipédia, SAT</a></li>
+  </ul>
+
 </body>

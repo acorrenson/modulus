@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../index.css">
+  <title>Modulus</title>
+</head>
+
+<body>
+  <h1>Modulus (Article)</h1>
+  <hr>
+  <p><i>Building an SMT solver from the ground up</i></p>
+  <a href="../index.html">acceuil</a>
+  <a href="./blog.html">blog</a>
+  <ul>
+    <li>Auteur : Arthur Correnson</li>
+    <li>Email : <a href="mailto:arthur@correnson.@ens-rennes.fr">arthur@correnson.@ens-rennes.fr</a></li>
+    <li>Date : 29/06/21 </li>
+  </ul>
+  <h2>Titre de l'article</h2>
+  <!-- <p>
+    Sans perte de généralité, on peut supposer que les formules en entrée sont en forme normale normale conjonctive,
+    c'est à dire de la forme <math>(a1 ou a2 ou ... aN) et (b1 ou b2 ou ... bM) ...</math> avec <math>ai</math> une
+    variable (<math>x</math>) ou la négation d'une variable (<math>non x</math>). Il
+    existe
+    un des algorithmes
+    efficaces qui transforment toute formule en une formule équivalente sous cette forme.
+  </p>
+  <code><pre>
+    (* Type des formules *)
+    type formula =
+      | Var of int
+      | Neg of int
+      | And of formula * formula
+      | Or of formula * formula
+  </pre></code>
+  <code><pre>
+    (* Type des formules simplifiées, la négation est distribuées sur les variables *)
+    type sformula =
+      | Lit of int
+      | And of formula * formula
+      | Or of formula * formula
+  </pre></code>
+  <code><pre>
+    (* Clauses et formes normales conjonctive *)
+    type clause = int list
+    type cnf = clause list
+  </pre></code>
+  <code><pre>
+    let rec formula_to_sformula (f : formula) : formula' = ...
+
+    let rec sformula_to_cnf (f : sformula) : formula' = ...
+    
+    let rec formula_to_cnf (f : formula) : cnf =
+      f |> formula_to_sformula |> sformula_to_cnf
+  </pre></code> -->
+</body>
