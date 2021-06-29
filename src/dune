@@ -1,5 +1,0 @@
-(include_subdirs unqualified)
-
-(library
- (public_name modulus.modulus_lib)
- (name modulus_lib))

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="index.css">
+  <title>Modulus</title>
+</head>
+
+<body>
+  <h1>Modulus</h1>
+  <hr>
+  <p><i>Building an SMT solver from the ground up</i></p>
+  <a href="./blog/blog.html">blog</a>
+  <h2>Introduction</h2>
+  <p>
+    Les solveurs <a href="https://fr.wikipedia.org/wiki/Satisfiability_modulo_theories">SMT</a> sont des outils qui
+    permettent de faire la preuve automatique d'énoncés mathématiques faisant intervenir des théories spécifiques
+    (théories des tableaux, nombres entiers, symboles de fonctions, égalités, etc). Depuis la dernière décennie, les
+    solveurs SMT ont connus un véritable essor et sont devenus de plus en plus puissant au point de devenir
+    indispensables dans les domaines nécessitant d'automatiser des raisonnements comme par exemple la preuve automatique
+    de programmes.
+  </p>
+  <p>
+    Développer un tel solveur est une tâche très complexe pour plusieurs raisons. D'une part, écrire un solveur est
+    généralement difficile car ce sont des programmes qui s'adressent à des problèmes de combinatoire intrinsèquement
+    durs. D'autre part, les solveurs SMT ont la particularité de résoudre des problèmes faisant intervenir un
+    assortiment riche de théories très différentes. De ce fait, les solveurs SMT font généralement appel à d'autres
+    solveurs dédiés pour chaque théorie spécifique et orchestrent ensuite la résolution de bout en bout. Ces solveurs
+    dédiés doivent eux-même être programmés et ensuite assemblés ce qui représente un véritable challenge en matière
+    d'ingénierie.
+  </p>
+  <h2>Le projet Modulus</h2>
+  <p>
+    Le projet étudiant Modulus est de développer depuis 0 un solveurs SMT en langage OCaml. Il s'agit d'un
+    projet à vocation purement pédagogique dont l'objectif est principalement celui de se confronter à l'ensemble des
+    difficultés soulevés par le développement d'un tel programme. Le développement de Modulus n'utilisa aucune
+    dépendances autres que la bibliothèque standard OCaml. En particulier, tous les
+    solveurs spécifiques aux théories seront développés à la main. L'avancé du projet sera consigné sur ce blog au fur
+    et à mesure.
+  </p>
+  <p>
+    Rappelons que Modulus n'a nullement vocation à être un solveur efficace. Il s'agit d'un exercice de style à objectif
+    pédagogique ! Étant développé par des étudiants d'informatique en pleine apprentissage, il est également fort
+    probable que des parties
+    non anecdotique du solveur soient relativement mal programmée. Des <i>refactoring</i> réguliers seront faits et la
+    structure entière du projet sera amenée à changer très régulièrement.
+  </p>
+  <h2>Contribu(er|ez) !</h2>
+  <p>
+    Modulus est avant tout un projet étudiant dont le but est d'apprendre et de comprendre les grands principe des
+    solveurs et des raisonneurs automatiques. Toute forme de contribution est donc la bienvenue !
+  </p>
+  <p>
+    Les sources de Modulus sont libres et disponibles sur Github à l'adresse <a
+      href="https://github.com/jdrprod/modulus">https://github.com/jdrprod/modulus</a>.
+  </p>
+  <h2>Blog</h2>
+  <p>
+    Les avancés dans le développement de Modulus peuvent être suivis sur notre <a href="./blog/blog.html">blog</a>
+  </p>
+
+</body>
+
+</html>
