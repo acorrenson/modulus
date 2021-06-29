@@ -18,43 +18,202 @@
   <ul>
     <li>Auteur : Arthur Correnson</li>
     <li>Email : <a href="mailto:arthur@correnson.@ens-rennes.fr">arthur@correnson.@ens-rennes.fr</a></li>
-    <li>Date : 29/06/21 </li>
+    <li>Date : 30/06/21 </li>
   </ul>
-  <h2>Titre de l'article</h2>
-  <!-- <p>
-    Sans perte de généralité, on peut supposer que les formules en entrée sont en forme normale normale conjonctive,
-    c'est à dire de la forme <math>(a1 ou a2 ou ... aN) et (b1 ou b2 ou ... bM) ...</math> avec <math>ai</math> une
-    variable (<math>x</math>) ou la négation d'une variable (<math>non x</math>). Il
-    existe
-    un des algorithmes
-    efficaces qui transforment toute formule en une formule équivalente sous cette forme.
+  <h2>A tout petit solveur SAT en OCaml</h2>
+  <p>
+    Dans un <a href="./post1.html">premier article</a> nous avons vu qu'un solveur SAT était une composante principale
+    dans
+    un solveur SMT. L'object de cette article est de présenter un tout petit solveur SAT. Ce solveur sera écrit en OCaml
+    comme le reste du <a href="../index.html">projet Modulus</a>.
+  </p>
+  <h3>Rappels et définitions</h3>
+  <h4>Syntaxe</h4>
+  <p>
+    Un solveur SAT permet de résoudre le problème de la satisfiabilité d'une formule booléenne.
+    Formellement une formule booléenne <math>&phi;</math> construite sur l'ensemble de variables <math>V</math> est
+    soit :
+  <ul>
+    <li>Une variable <math>x &isin; V</math></li>
+    <li>Une conjonction (et) <math>&phi; &and; &psi;</math> (avec <math>&phi; &psi;</math> des formules)</li>
+    <li>Une disjonction (ou) <math>&phi; &or; &psi;</math> (avec <math>&phi; &psi;</math> des formules)</li>
+    <li>Une négation (non) <math>&not;&phi;</math> (avec <math>&phi;</math> une formule)</li>
+  </ul>
+  </p>
+  <p>
+    pour représenter les formules booléenne en OCaml, on définit un type <math>formula</math> :
+    <code><pre>
+      type formula =
+        | Var of V
+        | Or of formula * formula
+        | And of formula * formula
+        | Neg of formula
+    </pre></code>
+  </p>
+  <h4>Sémantique</h4>
+  <p>
+    Maintenant que nous avons définit la syntaxe des formules booléennes, il faut leur donner un sens (une "sémantique"
+    pour faire plaisir aux logiciens). Étant donnée une fonction <math>&lambda; : V &rightarrow; {vrai; faux}</math> qui
+    représente l'affectation d'une valeur de vérité aux variables, la sémantique d'une formule <math>&phi;</math> pour
+    cette affectation est notée <math>[[&phi; | &lambda;]]</math> :
+  <ul>
+    <li><math>[[x | &lambda;]] = &lambda;(x)</math></li>
+    <li><math>[[&phi; &and; &psi; | &lambda;]] = [[x | &lambda;]] et [[x | &lambda;]]</math></li>
+    <li><math>[[&phi; &or; &psi; | &lambda;]] = [[x | &lambda;]] ou [[x | &lambda;]]</math></li>
+    <li><math>[[&not;&phi; | &lambda;]] = non [[x | &lambda;]]</math></li>
+  </ul>
+  Les opérateurs <math>et, ou, non</math> sont simplement à prendre au sens des opérateurs usuels associés au type
+  <math>bool</math> dans les langages de programmation. Le problème SAT peut ensuite être vu comme celui de trouver,
+  étant donné une formule <math>&phi;</math>, une
+  affectation <math>&lambda;</math> telle que <math>[[&phi; | &lambda;]] = vrai</math>
+  </p>
+  <p>
+    Une implémentation OCaml naïve de la sémantique peut-être faite en représentant les affectations par des fonctions
+    de type <math>V &rightarrow; bool</math>
   </p>
   <code><pre>
-    (* Type des formules *)
-    type formula =
-      | Var of int
-      | Neg of int
-      | And of formula * formula
-      | Or of formula * formula
+    let eval (f : formula) (e : V -> bool) =
+      match f with
+      | Var x -> e x
+      | Or (f1, f2) -> (eval f1 e) || (eval f1 e)
+      | And (f1, f2) -> (eval f1 e) && (eval f1 e)
+      | Neg f1 -> not (eval f1 e)
   </pre></code>
+  <p>
+    En pratique, cette définition n'est pas très optimale car elle nécessite de représenter les affectations comme des
+    fonctions. Construire des fonctions à la volé est facile en OCaml, mais ce peut-être assez coûteux en mémoire.
+    Par ailleurs, écrire des algorithmes complexes pour transformer des fonctions peut s'avérer assez pénible. Pour
+    résoudre ces problèmes, on représentera plutôt les affectations comme une liste des variables auxquelles on souhaite
+    affecter la valeur <math>vrai</math>. Les variables non présentes dans la liste seront considérées comme associées à
+    la valeur <math>faux</math>.
+  </p>
+  <h3>Forme normale conjonctive</h3>
+  <p>
+    La structure "en arbre" des formules comme définis ci-dessus rend la programmation des raisonnements difficiles.
+    Pour écrire un solveur, une représentation plus "linéaire" des formules est plus pratique. Pour cela on introduit la
+    notion de <em>forme normale conjonctive</em> (CNF).
+  <ul>
+    <li><b>un littéral</b> est une variable (<math>x</math>) ou sa négation (<math>&not;x</math>)</li>
+    <li><b>une clause</b> est une disjonction de littéraux (<math>l1 &or; l2 &or; ... &or; lN</math>)</li>
+    <li><b>une formule en CNF</b> est une conjonction de clauses (<math>c1 &and; c2 &and; ... &and; cN</math>)</li>
+  </ul>
+  Par exemple la formule <math>(x &or; &not;y) &and; z</math> est en CNF.
+  </p>
+  <p>
+    Un résultat fondamental est que toute formule booléenne peut-être transformée en une formule équivalente qui est en
+    forme CNF. A partir de maintenant on considérera donc que toutes les formules sont en forme CNF ce qui simplifiera
+    beaucoup les raisonnements.
+  </p>
+  <p>
+    Dans une formule en forme CNF, la structure imposée est telle qu'il n'est plus nécessaire de faire apparaître
+    explicitement les connecteurs logiques. En considérant les variables comme des entiers (ce qui
+    revient à numéroter les variables <math>x1, x2, ... xN</math>) on peut représenter facilement les formules en forme
+    CNF :
+  <ul>
+    <li>les littéraux sont des entiers <math>n</math> ou <math>-n</math> selon leur signe</li>
+    <li>les clauses sont des ensembles de littéraux</li>
+    <li>les formules en cnf sont des ensembles de clauses</li>
+  </ul>
+  </p>
+  <p>
+    Traduit en OCaml, on peut donc définir les formules en CNF de façon très simple :
+  </p>
   <code><pre>
-    (* Type des formules simplifiées, la négation est distribuées sur les variables *)
-    type sformula =
-      | Lit of int
-      | And of formula * formula
-      | Or of formula * formula
-  </pre></code>
-  <code><pre>
-    (* Clauses et formes normales conjonctive *)
-    type clause = int list
+    type literal = int
+    type clause = literal list
     type cnf = clause list
   </pre></code>
+  <p>
+    On programme ensuite une fonction de conversion en forme CNF (dont on ne détaillera pas l'implémentation ici).
+  </p>
   <code><pre>
-    let rec formula_to_sformula (f : formula) : formula' = ...
-
-    let rec sformula_to_cnf (f : sformula) : formula' = ...
-    
-    let rec formula_to_cnf (f : formula) : cnf =
-      f |> formula_to_sformula |> sformula_to_cnf
-  </pre></code> -->
+    let cnf (f : formula) : cnf = ...
+  </pre></code>
+  <p>
+    Enfin, les affectations peuvent être représentées comme un ensemble de littéraux. Si un littéral apparaît dans
+    l'ensemble, on associe sa variable à <math>vrai</math> ou <math>faux</math> en fonction de son signe. Par exemple,
+    l'affectation <math>{-1, 2, 3}</math> peut-être interprétée comme <math>x1 := faux, x2 := vrai, x3 := vrai</math>.
+    Les variables n'apparaissant pas dans la liste sont ignorées. Un problème SAT peut également ne pas avoir de
+    solution, on définit donc un type <math>solution</math> qui prend en compte cette possibilité.
+  </p>
+  <code><pre>
+    type affectation = literal list
+    type solution =
+      | SAT of affectation
+      | UNSAT
+  </pre></code>
+  <h3>Le solveur</h3>
+  <p>
+    On s'attaque maintenant à l'écriture d'un petit solveur. On suppose que les formules sont déjà mises en forme CNF
+    donc le solveur prend la forme d'une fonction de type <math>sat : cnf &rightarrow; solution</math>
+  </p>
+  <p>
+    L'idée générale d'un solveur SAT est d'alterner deux phases :
+  <ul>
+    <li>Une phase de <b>décision</b> où l'on choisit une variable pour lui attribuer une valeur de vérité (ceci est
+      équivalent à juste choisir un littéral et choisir de le rendre <math>vrai</math>)</li>
+    <li>Une phase de <b>propagation</b> où l'on simplifie la formule grâce à la dernière décision</li>
+  </ul>
+  Par exemple dans la formule <math>(&not;x1 &or; x2) &and; (x3)</math>, si on décide <math>x1 := faux</math>, alors la
+  clause <math>(&not;x1 &or; x2)</math> devient vraie et la formule se simplifie en juste <math>x3</math>.
+  De même, si l'on fait la décision <math>x3 := faux</math> dans la formule <math>(x3)</math>, alors la clause
+  <math>(x3)</math> devient vide ce qui marque une contradiction : il faut faire une autre décision pour
+  <math>x3</math>.
+  </p>
+  <p>
+    D'une manière générale les règles de propagation d'une décision (représentée par un litéral) <math>l</math> sont les
+    suivantes :
+  <ol>
+    <li>si une clause contient le littéral <math>l</math>, on supprime cette clause car elle est rendue vraie</li>
+    <li>si une clause contient la négation de <math>l</math>, on supprime le littéral de cette clause</li>
+  </ol>
+  </p>
+  <p>
+    On programme une fonction <math>propagate : literal &rightarrow; cnf &rightarrow; cnf</math> qui étant donnés un
+    litéral représentant une décision et une formule en CNF, simplifie cette formule en suivant ces règles.
+  </p>
+  <code><pre>
+    let propagate l f =
+      match f with
+      | [] -> []
+      | c::cs ->
+        if List.mem x c then c::(propagate l cs)
+        else (List.filter ((=) (-c))
+  </pre></code>
+  <p>
+    Trois issues sont possibles après un cycle de décision/propagation.
+  <ol>
+    <li>la formule contient une clause vide: cela signifie qu'il y a une contradiction et qu'il faut faire la décision
+      inverse de celle qui a vient d'être propagée ne façon non fructueuse</li>
+    <li>la formule ne contient plus aucune clause: cela signifie que la résolution est finie et que l'ensemble des
+      décision faites constitue une solution</li>
+    <li>la formule ne contient pas la clause vide mais contient toujours des clauses: dans ce cas on relance un cycle de
+      décision/propagation sur une nouvelle variable</li>
+  </ol>
+  On peut donc maintenant dériver un algorithme simple pour la résolution.
+  </p>
+  <code><pre>
+    let rec sat (f : cnf) =
+      match f with
+      | [] -> SAT [] (* la solution du problème vide est l'affectation qui ignore toute variable *)
+      | c::cs ->
+        match c with
+        | [] -> UNSAT (* on a trouvé une clause vide *)
+        | l::ls ->
+          (* on fait une décision sur le litéral l *)
+          match sat (propagate l f) with
+          | Some s -> Some (l::s) (* on a trouvé une solution *)
+          | None ->
+            (* l := vrai ne marche pas, on essaye l := faux *)
+            sat (propagate (-l) f)
+  </pre></code>
+  <h3>Disclaimer</h3>
+  <p>
+    Cet algorithme a l'avantage d'être très facile à implémenter et très facile à comprendre. On peut même facilement
+    faire sa <a href="https://github.com/jdrprod/SATurne">preuve de correction en Coq</a> ! En revanche, c'est un
+    algorithme assez inefficace en pratique. Toutefois, il reste beaucoup plus efficace qu'un algorithme naïf qui
+    consiste
+    à tester toutes les possibilités. Nous verrons dans un futur article comment améliorer significativement ce même
+    algorithme puis comment implémenter un "vrai" solveur SAT qui résistera au passage à l'échelle.
+  </p>
 </body>
