@@ -7,6 +7,7 @@ type ttype =
 type term =
   | Var of int
   | Cst of int
+  | Add of term * term
 
 type atom =
   | Eq of term * term
@@ -17,6 +18,7 @@ type formula =
   | Neg of formula
   | Atom of atom
 
+  
 
 module VSet = Set.Make (Int)
 
