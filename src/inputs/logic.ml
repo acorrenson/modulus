@@ -97,15 +97,3 @@ let to_cnf (form : formula) : cnf * vmap =
       if s then [[!i]] else [[-(!i)]]
   in
   to_cnf_aux (cnf_pass_neg true form), h
-
-(**
-
-(x = 1) /\ ((x = 2) \/ (x = 1))
-
-[Sat] I found a pre-model [x = 1, x = 2]
-[LIA] I try to solve [x = 1, x = 2].... and I fail
-[Sat] Ok I compute an other pre-model [x = 1, x = 1]
-[LIA] I try to solve [x = 1, x = 1].... and OK
--> SAT !!
-
-*)

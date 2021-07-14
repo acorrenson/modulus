@@ -20,3 +20,8 @@ let rec solve (problem : cnf) =
     match solve (propagate l cs) with
     | Some _ as sol -> sol
     | None -> solve (propagate (-l) (ls::cs))
+
+let rec solve_all (problem : cnf) =
+  match solve problem with
+  | None -> Lstream.Nil
+  | Some s -> Cons (s, lazy (solve_all (List.map (fun x -> -x) s::problem)))
