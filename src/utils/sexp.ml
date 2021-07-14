@@ -51,12 +51,3 @@ let of_string s =
 
 let of_file f =
   open_in f |> Stream.of_channel |> lex |> many1 parse_sexp
-
-
-(* "(a b 1)" -> Kwd "("; Ident "a"; Ident "a"; Int 1; Kwd ")" *)
-
-(*
-(set-logic ALL)
-(assert (= 1 1))
-(check-sat)
-*)
