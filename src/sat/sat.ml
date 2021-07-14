@@ -24,4 +24,4 @@ let rec solve (problem : cnf) =
 let rec solve_all (problem : cnf) =
   match solve problem with
   | None -> Lstream.Nil
-  | Some s -> Cons (s, lazy (solve_all (List.map (fun x -> -x) s::problem)))
+  | Some s -> Cons (s, lazy (solve_all (List.map Int.neg s::problem)))
