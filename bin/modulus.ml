@@ -12,5 +12,5 @@ let ensure_unsat msg (a : atom) =
 let () =
   ensure_unsat "0 != 1" (Eq (Cst 0, Cst 1));
   ensure_sat "1 = 1" (Eq (Cst 1, Cst 1));
-  ensure_sat "x0 = x0" (Eq (Var 0, Var 0));
-  ensure_sat "x0 = x1" (Eq (Var 0, Var 1))
+  ensure_sat "x = x" (Eq (Var "x", Var "x"));
+  ensure_sat "x = y" (Eq (Var "x", Var "y"))

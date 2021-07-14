@@ -5,7 +5,7 @@ type ttype =
   | Bool
 
 type term =
-  | Var of int
+  | Var of string
   | Cst of int
   | Add of term * term
 
@@ -18,7 +18,7 @@ type formula =
   | Neg of formula
   | Atom of atom
 
-module VSet = Set.Make (Int)
+module VSet = Set.Make (String)
 
 let tvars (t : term) : VSet.t =
   match t with
