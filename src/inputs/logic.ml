@@ -18,8 +18,6 @@ type formula =
   | Neg of formula
   | Atom of atom
 
-  
-
 module VSet = Set.Make (Int)
 
 let tvars (t : term) : VSet.t =
