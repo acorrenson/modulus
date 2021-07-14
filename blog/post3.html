@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../index.css">
+  <title>Modulus</title>
+</head>
+
+<body>
+  <h1>Modulus (Article)</h1>
+  <hr>
+  <p><i>Building a SMT solver from the ground up</i></p>
+  <a href="../index.html">acceuil</a>
+  <a href="./blog.html">blog</a>
+  <ul>
+    <li>Auteurs : Arthur Correnson & Amine Naim </li>
+    <li>Email :
+      <a href="mailto:arthur.correnson@ens-rennes.fr">arthur.correnson@ens-rennes.fr</a>
+    </li>
+    <li>Date : 14/07/2021 </li>
+  </ul>
+  <h2>Gestion des entrées au format SMT-LIB</h2>
+  <p>
+    Le standard <a href="http://smtlib.cs.uiowa.edu/">SMT-LIB</a>
+    définit un langage commun pour intérroger tous les solveurs SMT. Cela permet d'utiliser n'importe quel solveur via
+    une même
+    interface unifiée sans avoir à ce soucier des détails d'implémentation. Modulus n'échappe pas à la règle et accepte
+    des entrées au format SMT-LIB. Dans ce blog, nous présentons succinctement une première approche pour la lecture de
+    ce format d'entrées.
+  </p>
+  <h3>Le format SMT-LIB</h3>
+  <p>
+    Le langage SMT-LIB est un véritable petit langage de script qui permet de piloter les solveurs. Il permet de régler
+    les
+    différents paramètre du solveur, de demander la résolution de certaines formules et de programmer l'affichage des
+    résultats. Afin de pouvoir rapidement tester notre solveur, nous commençons par implémenter un tout petit fragment
+    de ce langage qui nous permet de déclarer des variables entières et de demander la résolution d'équations simples.
+  </p>
+  <pre><code>
+    (set-logic QF_LIA)
+    (declare-const x Int)
+    (assert (and (= x 1) (= x 2))
+    (check-sat)
+    (exit)
+  </code></pre>
+  Le fichier SMT-LIB ci dessus règle le solveur pour l'utilisation de la théorie de l'arithmétique linéaire des nombres
+  entiers sans quantificateurs, déclare une variable <math>x</math> de type <math>Int</math> et demande si la formule
+  <math>x = 1 &wedge; x = 2</math> est satisfiable. Ici la formule
+  n'est pas satisfiable, mais dans le cas contraire on peut obtenir un modèle
+  en utilisant la commande <math>(get-model)</math>. Il existe beaucoup d'autres commandes mais dans un premier temps
+  les commandes <math>(set-logic ...)</math>, <math>(declare-const ...)</math>, <math>(assert ...)</math>,
+  <math>(check-sat)</math>, <math>(get-model)</math> et <math>(exit)</math> nous suffiront pour la plupart des usages.
+  <h3>Définition des commandes usuelles</h3>
+  <ul>
+    <li><math>(set-logic &lt;logic&gt;)</math>:
+      Cette commande est la première commande qui doit apparaître dans un fichier SMT-LIB. Elle configure les théories
+      que le solveur est autorisé à utiliser au cours de la résolution. Les différentes combinaisons de théories sont
+      appelés des <i>logics</i> dans le standard SMT-LIB. Par exemple, <b>QF_LIA</b> désigne la théorie de
+      l'arithmétique linéaire sans quantificateurs sur les nombres entiers (<i>Quantifier Free Linear Integer
+        Arithmetic</i>). Si l'on souhaite activer toutes les théories supportées par le solveur, on peut passer le mot
+      clef <b>ALL</b> en paramètre.
+    </li>
+    <li><math>(assert &lt;formula&gt;)</math>: La commande <b>assert</b> permet d'ajouter une formule à résoudre dans le
+      contexte actuelle. Les formules sont écrites sous forme de <a
+        href="https://fr.wikipedia.org/wiki/S-expression">S-expressions</a>. Par exemple la formule <math>(p &wedge; q)
+        &vee; &not; r</math> s'écrit <math>(or (and p q) (not r))</math>
+    </li>
+    <li><math>(declare-const &lt;x&gt; &lt;t&gt;)</math>: La commande <b>declare-const</b> permet de déclarer une
+      nouvelle variable et son type. Dans un premier temps, nous supporterons uniquement les variables de type
+      <math>Int</math>. Les variables non déclarées provoquent une erreur à l'exécution du solveur.
+    </li>
+    <li><math>(check-sat)</math>: cette commande demande au solveur de vérifier la satisfiabilité de l'ensemble des
+      formules précédemment enregistrées via la commande <math>(assert ...)</math>. Notons que l'on peut très bien
+      demander plusieurs fois de vérifier la satisfiabilité tout en ayant rajouté des nouvelles formules entre temps :
+      <pre><code>
+        (assert (x = 1))
+        (check-sat)
+        ; SAT
+        (assert (x = 2))
+        (check-sat)
+        ; UNSAT
+      </code></pre>
+    </li>
+    <li><math>(exit)</math>: cette commande termine simplement une suite de commande</li>
+  </ul>
+  <h3>S-expressions en OCaml</h3>
+  <p>
+    Le langage SMT-LIB est basé sur l'usage des S-expressions. Il s'agit d'une notation très simple pour décrire des
+    programmes ou des données dans un format textuel. Formellement, une S-expression est soit un symbole (par exemple,
+    un nom de variable <math>x</math> ou la constante <math>1</math>) soit une liste de S-expressions délimitée par des
+    parenthèses :
+  </p>
+  <pre><code>
+    &lt;s-expr&gt; ::= &lt;symbol&gt; | ( &lt;s-expr&gt;* )
+  </code></pre>
+  <p>
+    Pour le moment, les seuls symboles qui nous intéressent sont les identifiants comme les noms de variable et les
+    noms de commande ainsi que les constantes entières. Les S-expressions s'encode alors en OCaml par le type suivant :
+  </p>
+  <pre><code>
+    type sexp =
+      | Sym of string
+      | Int of int
+      | Cons of sexp list
+  </code></pre>
+  <p>
+    Chaque commande SMT-LIB est représentée par une S-expression et un script est une liste de plusieurs commandes.
+    Ainsi, le fichier SMT-LIB présenté plus tôt peut-être modélisé en OCaml de la façon suivante :
+  </p>
+  <pre><code>
+    [
+      Cons [Sym "set-logic"; Sym "QF_LIA"];
+      Cons [Sym "declare-const"; Sym "x"; Sym "Int"];
+      Cons [Sym "assert"; Cons [Sym "and";
+        [Sym "="; Sym "x"; Int 1];
+        [Sym "="; Sym "x"; Int 2];
+      ];
+      Cons [Sym "check-sat"];
+      Cons [Sym "exit"];
+    ]
+  </code></pre>
+  <p>
+    Nous souhaitons à présent écrire un parser qui extrait ce type de représentation à partir d'un fichier texte au
+    format SMT-LIB.
+  </p>
+
+</body>
