@@ -13,20 +13,20 @@ let is_atom = function
   | _ -> false
 
 let exact s = satisfy ((=) s)
-let set_logic =
-    exact (Genlex.Ident "set") >>
-    exact (Genlex.Ident "-") >>
-    exact (Genlex.Ident "logic") >>
-    return (Sym "set-logic")
 
-let check_sat =
-  exact (Genlex.Ident "check") >>
-  exact (Genlex.Ident "-") >>
-  exact (Genlex.Ident "sat") >>
-  return (Sym "check-sat")
+let ident =
+  any >>= (function
+    | Genlex.Ident x -> return x
+    | _ -> zero)
+
+let command =
+    ident >>= fun a ->
+    (exact (Genlex.Ident "-")) >>= fun _ ->
+    ident >>= fun b ->
+    return (Sym (a ^ "-" ^ b))
 
 let atom =
-  check_sat <|> set_logic <|> (any >>= (function
+  command <|> (any >>= (function
     | Genlex.Int i -> return (Int i)
     | Genlex.Ident x -> return (Sym x)
     | _ -> zero
