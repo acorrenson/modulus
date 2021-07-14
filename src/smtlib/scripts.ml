@@ -18,7 +18,7 @@ type smtscript = command list
 let rec make_term (s : sexp) : term =
   match s with
   | Sym v -> Var v
-  | Int i -> Cst i 
+  | Int i -> Cst i
   | Cons [Sym "+"; t1; t2] -> Add (make_term t1, make_term t2)
   | _ -> failwith "invalid term"
 
@@ -67,5 +67,37 @@ let smt_of_sexp = List.map command_of_sexp
 
 type typing_env = (string, ttype) Hashtbl.t
 
+exception TypeError
+exception VarDup of string
+exception NoType of string
 
+let rec type_check_term (t : term) (e : typing_env) =
+  match t with
+  | Var x -> begin
+    match Hashtbl.find_opt e x with
+    | Some Int -> ()
+    | _ -> raise (NoType x)
+    end
+  | Cst _ -> ()
+  | Add (a, b) -> type_check_term a e; type_check_term b e
 
+let rec type_check_formula (f : formula) (e : typing_env) =
+  match f with
+  | And (f1, f2) -> type_check_formula f1 e; type_check_formula f2 e
+  | Or (f1, f2) -> type_check_formula f1 e; type_check_formula f2 e
+  | Neg f' -> type_check_formula f' e
+  | Atom (Eq (a, b)) -> type_check_term a e; type_check_term b e
+
+let type_check_command (c : command) (e : typing_env) =
+  match c with
+  | Assert f -> type_check_formula f e
+  | DeclareConst (x, t) -> begin
+    match Hashtbl.find_opt e x with
+    | Some _ -> raise (VarDup x)
+    | None -> Hashtbl.add e x t
+    end
+  | _ -> ()
+
+let type_check s =
+  let e : typing_env = Hashtbl.create 10 in
+  List.iter (fun c -> type_check_command c e) s
