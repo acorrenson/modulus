@@ -10,7 +10,7 @@ type context = {
   tenv  : Scripts.typing_env;
   state : smt_state;
   stack : formula list;
-  logic : Scripts.smtlogic;
+  logic : Scripts.smt_logic;
 }
 
 let do_assert ctx f =
@@ -63,27 +63,44 @@ let do_get_model ctx =
   | _ ->
     Printf.eprintf "(error \"not in sat mode\")\n"; ctx
 
+let exec_one next ctx sxp =
+  begin try
+    match Scripts.command_of_sexp sxp with
+    | Assert f -> next (do_assert ctx f)
+    | SetLogic l -> next (do_set_logic ctx l)
+    | DeclareConst (x, t) -> next (do_declare_const ctx x t)
+    | GetModel -> next (do_get_model ctx)
+    | CheckSat -> next (do_check_sat ctx)
+    | Exit -> raise Exit
+  with
+    | Failure msg ->
+      Printf.eprintf "(error \"%s\")\n" msg;
+      ctx
+    | Exit -> raise Exit
+  end
 
-let exec () =
+let batch f =
+  match Sexp.of_file f with
+  | Some (sxp, Lstream.Nil) ->
+    List.fold_left (exec_one Fun.id) {
+      tenv = Hashtbl.create 50;
+      state = Start_mode;
+      stack = [];
+      logic = ALL;
+    } sxp
+  | _ -> Printf.eprintf "parse error\n"; exit 1
+
+let repl () =
   let rec step ctx =
     flush stderr;
     Printf.printf "> ";
     match Sexp.of_string (read_line ()) with
-    | None -> Printf.eprintf "(error \"this command is incorrect or unsupported\")\n"
+    | None | Some ([], _) | Some (_::_::_, _) ->
+      Printf.eprintf "(error \"this command is incorrect\")\n";
+      step ctx
     | Some ([s], _) ->
-      begin try
-        match Scripts.command_of_sexp s with
-        | Assert f -> step (do_assert ctx f)
-        | SetLogic l -> step (do_set_logic ctx l)
-        | DeclareConst (x, t) -> step (do_declare_const ctx x t)
-        | GetModel -> step (do_get_model ctx)
-        | CheckSat -> step (do_check_sat ctx)
-        | Exit -> ()
-      with
-        | Failure msg -> Printf.eprintf "(error \"%s\")\n" msg
-        | _ -> assert false
-      end
-    | _ -> ()
+      try exec_one step ctx s
+      with Exit -> exit 0
   in
   step {
     tenv = Hashtbl.create 50;

@@ -3,14 +3,11 @@ open Modulus_lib.Loop
 let () =
   if Array.length Sys.argv > 1 then
     if Sys.argv.(1) = "-i" then
-      exec ()
-    else begin
-      Printf.eprintf "unknown command '%s'\n" Sys.argv.(1);
-      flush stderr;
-      exit 1
-    end
+      ignore (repl ())
+    else
+      ignore (batch Sys.argv.(1))
   else begin
-    Printf.eprintf "batch mode is'nt supported yet\n";
+    Printf.eprintf "usage: %s ( -i | <file> )\n" Sys.argv.(0);
     flush stderr;
     exit 1
   end 

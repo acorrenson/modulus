@@ -1,13 +1,13 @@
 open Logic
 open Sexp
 
-type smtlogic =
+type smt_logic =
   | ALL
   | QF_LIA
 
 type command =
   | Assert of formula
-  | SetLogic of smtlogic
+  | SetLogic of smt_logic
   | GetModel
   | Exit
   | CheckSat
