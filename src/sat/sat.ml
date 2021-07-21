@@ -2,7 +2,13 @@ type clause = int list
 
 type cnf = clause list
 
-let remove_lit l = List.filter ((=) l)
+let remove_lit l = List.filter ((<>) l)
+
+let string_of_clause c =
+  "{" ^ String.concat " " (List.map string_of_int c) ^ "}"
+
+let string_of_cnf c =
+  "{" ^ String.concat " " (List.map string_of_clause c) ^ "}"
 
 let rec propagate (l : int) (problem : cnf) =
   match problem with
@@ -18,8 +24,10 @@ let rec solve (problem : cnf) =
   | []::_ -> None
   | (l::ls)::cs ->
     match solve (propagate l cs) with
-    | Some _ as sol -> sol
-    | None -> solve (propagate (-l) (ls::cs))
+    | Some s -> Some (l::s)
+    | None ->
+      if (List.compare_length_with ls 0 = 0) then None
+      else Option.map (fun s -> -l::s) @@ solve @@ propagate (-l) (ls::cs)
 
 let rec solve_all (problem : cnf) =
   match solve problem with
