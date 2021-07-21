@@ -63,14 +63,14 @@ let do_get_model ctx =
   | _ ->
     Printf.eprintf "(error \"not in sat mode\")\n"; ctx
 
-let exec_one next ctx sxp =
+let exec_one ctx sxp =
   begin try
     match Scripts.command_of_sexp sxp with
-    | Assert f -> next (do_assert ctx f)
-    | SetLogic l -> next (do_set_logic ctx l)
-    | DeclareConst (x, t) -> next (do_declare_const ctx x t)
-    | GetModel -> next (do_get_model ctx)
-    | CheckSat -> next (do_check_sat ctx)
+    | Assert f -> do_assert ctx f
+    | SetLogic l -> do_set_logic ctx l
+    | DeclareConst (x, t) -> do_declare_const ctx x t
+    | GetModel -> do_get_model ctx
+    | CheckSat -> do_check_sat ctx
     | Exit -> raise Exit
   with
     | Failure msg ->
@@ -82,7 +82,7 @@ let exec_one next ctx sxp =
 let batch f =
   match Sexp.of_file f with
   | Some (sxp, Lstream.Nil) ->
-    List.fold_left (exec_one Fun.id) {
+    List.fold_left exec_one {
       tenv = Hashtbl.create 50;
       state = Start_mode;
       stack = [];
@@ -99,7 +99,7 @@ let repl () =
       Printf.eprintf "(error \"this command is incorrect\")\n";
       step ctx
     | Some ([s], _) ->
-      try exec_one step ctx s
+      try step (exec_one ctx s)
       with Exit -> exit 0
   in
   step {
