@@ -3,7 +3,7 @@ open Sexp
 
 type smtlogic =
   | ALL
-  | LIA
+  | QF_LIA
 
 type command =
   | Assert of formula
@@ -37,7 +37,7 @@ let make_command s args =
   match s with
   | "set-logic" -> begin
     match args with
-    | [Sym "LIA"] -> SetLogic LIA
+    | [Sym "QF_LIA"] -> SetLogic QF_LIA
     | [Sym "ALL"] -> SetLogic ALL
     | _ -> failwith "invalid arguments for command 'set-logic'"
     end
@@ -67,7 +67,6 @@ let smt_of_sexp = List.map command_of_sexp
 
 type typing_env = (string, ttype) Hashtbl.t
 
-exception TypeError
 exception VarDup of string
 exception NoType of string
 
