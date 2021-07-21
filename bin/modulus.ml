@@ -1,11 +1,16 @@
-(* open Modulus_lib.Qf_lia *)
-(* open Modulus_lib.Smtlib *)
 open Modulus_lib.Loop
 
 let () =
-  exec ()
-  (* parse Sys.argv.(1) |> lia |> function
-  | SAT -> print_endline "SAT"
-  | UNSAT -> print_endline "UNSAT"
-  | UNKNOWN -> print_endline "UNKNOWN" *)
-  
+  if Array.length Sys.argv > 1 then
+    if Sys.argv.(1) = "-i" then
+      exec ()
+    else begin
+      Printf.eprintf "unknown command '%s'\n" Sys.argv.(1);
+      flush stderr;
+      exit 1
+    end
+  else begin
+    Printf.eprintf "batch mode is'nt supported yet\n";
+    flush stderr;
+    exit 1
+  end 
