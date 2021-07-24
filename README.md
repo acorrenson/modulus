@@ -25,7 +25,7 @@ It will be the base block of the solver.
 
 ### DEV STEP 2
 
-The second step will be to embed a tinny logic language in OCaml. This language is probably going to be a subset of the first-order logic with no other function & predicate symbols than thus of the integer arithmetic with only constants, addition & basic comparisons.
+The second step will be to embed a tinny logic language in OCaml. This language is probably going to be a subset of the first-order logic with no other function & predicate symbols than these of the integer arithmetic with only constants, addition & basic comparisons.
 
 ```
 term ::=
