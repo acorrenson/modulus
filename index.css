@@ -1,7 +1,94 @@
-body {
+/* body {
   font-family: monospace;
-}
+} */
 
 math {
   color: brown;
+}
+
+body {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  margin: 0;
+  padding-left: 20%;
+  padding-right: 20%;
+  padding-top: 5%;
+  background-color: #fafafa;
+
+}
+
+a:link {
+  text-decoration: none;
+}
+
+a:visited {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:active {
+  text-decoration: underline;
+}
+
+a {
+  color: rgb(118, 68, 141);
+  font-weight: bold;
+}
+
+.quote {
+  font-style: italic;
+  color: grey;
+}
+
+
+.quote::before {
+  content: "\"";
+}
+
+.quote::after {
+  content: "\"";
+}
+
+.quote_from {
+  color: grey;
+}
+
+.quote_from::before {
+  content: "-- ";
+}
+
+h1 {
+  border-bottom: 3px solid rgb(118, 68, 141);
+  width: auto;
+}
+
+h2::before {
+  content: "#";
+  margin-right: 10px;
+  color: grey;
+}
+
+h2:hover::before {
+  color: blueviolet
+}
+
+.contact {
+  font-weight: bold;
+}
+
+#CV {
+  text-align: center;
+}
+
+#CV_DL {
+  border: 1px solid black;
+  padding: 5px;
+  border-radius: 3px;
+}
+
+footer {
+  margin-top: 10%;
+  border-top: 3px solid rgb(118, 68, 141);
 }
