@@ -83,9 +83,14 @@ let rec merge_cnf (cn1 : cnf) (cn2 : cnf) : cnf =
 
 type vmap = (int, atom) Hashtbl.t
 
+
 let to_cnf (form : formula) : cnf * vmap =
   let h = Hashtbl.create 10 in
-  let i = ref 0 in
+  let get_id (a : atom) =
+    let ha = Hashtbl.hash a in
+    if Hashtbl.mem h ha then ha
+    else (Hashtbl.add h ha a; ha)
+  in
   let rec to_cnf_aux (form : Cnf.t) =
     match form with
     | And (f1, f2) ->
@@ -93,7 +98,7 @@ let to_cnf (form : formula) : cnf * vmap =
     | Or (f1, f2) ->
       merge_cnf (to_cnf_aux f1) (to_cnf_aux f2)
     | Lit (s, a) ->
-      incr i; Hashtbl.add h !i a;
-      if s then [[!i]] else [[-(!i)]]
+      let i = get_id a in
+      if s then [[i]] else [[-i]]
   in
   to_cnf_aux (cnf_pass_neg true form), h
