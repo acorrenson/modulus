@@ -9,10 +9,10 @@ SMT solvers are magical tools that are massively used in various domains of Comp
 2. SMT solvers are capable to deal with a lot of rich theories & are thereby composed of many domain-specific solvers which theme-selfs are hard to develop.
 3. Assemble all the components required to build a SMT is a real software engineering challenge
 
-Modulus is an attempt at developing a tiny SMT in OCaml from scratch with no dependencies other than the OCaml standard library. It requires many components :
+Modulus is an attempt at developing a tiny SMT in OCaml from scratch with no dependencies other than the OCaml standard library. It requires many components amon which :
 
-1. A **SAT** solver which is the core of the solver used to guide the resolution by enumerating potential boolean models
-2. Various domain specific solvers to decide theories such as **LIA**, **EUF** or **FP**.
++ A **SAT** solver which is the core of the solver used to guide the resolution by enumerating potential boolean models
++ Various domain specific solvers to decide theories such as **LIA**, **EUF** or **FP**
 
 ## Disclaimer
 
