@@ -40,10 +40,10 @@ let are_independants (al : atom list) : bool =
   let rec step seen = function
     | [] -> true
     | x::xs ->
-      let v = avars x in
-      if VSet.exists (fun x -> VSet.mem x seen) v
+      let vs = avars x in
+      if VSet.(is_empty (inter vs seen))
       then false
-      else step (VSet.union seen v) xs
+      else step (VSet.union seen vs) xs
   in step VSet.empty al
 
 module Cnf = struct

@@ -76,10 +76,9 @@ let do_get_model ctx =
     VSet.iter (fun x ->
       match ctx.model with
       | SAT m ->
-        Printf.eprintf "%s -> %d\n" x (Option.get (m x))
+        Printf.eprintf "(%s %d)\n" x (Option.get (m x))
       | UNKNOWN -> ()
-      | UNSAT ->
-        Printf.eprintf "(error \"internal error\")\n"; exit 1
+      | UNSAT -> assert false
     ) vars;
     { ctx with state = Sat_mode }
   | _ ->
