@@ -41,9 +41,9 @@ let are_independants (al : atom list) : bool =
     | [] -> true
     | x::xs ->
       let v = avars x in
-      if VSet.exists (fun x -> VSet.mem x seen) v
-      then false
-      else step (VSet.union seen v) xs
+      if VSet.(is_empty (inter v seen))
+      then step (VSet.union seen v) xs
+      else false
   in step VSet.empty al
 
 module Cnf = struct
