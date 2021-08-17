@@ -12,6 +12,7 @@ type context = {
   state : smt_state;
   stack : formula list;
   logic : Scripts.smt_logic;
+  model : Qf_lia.Models.model;
 }
 
 let do_assert ctx f =
@@ -64,14 +65,17 @@ let do_check_sat ctx =
     | l::ls ->
       let f = List.fold_left (fun acc f -> And (acc, f)) l ls in
       match dpllt f with
-      | SAT -> sat ()
+      | SAT _ -> sat ()
       | UNSAT -> unsat ()
       | UNKNOWN -> unknown ()
 
 let do_get_model ctx =
   match ctx.state with
   | Sat_mode ->
-    Printf.eprintf "unsupported\n";
+    let vars = List.fold_left VSet.union VSet.empty (List.map Logic.vars ctx.stack) in
+    VSet.iter (fun x ->
+      Printf.eprintf "%s -> %d\n" x (Option.get (ctx.model x))
+    ) vars;
     { ctx with state = Sat_mode }
   | _ ->
     Printf.eprintf "(error \"not in sat mode\")\n"; ctx
@@ -100,6 +104,7 @@ let batch f =
       state = Start_mode;
       stack = [];
       logic = ALL;
+      model = function _ -> None
     } sxp
   | _ -> Printf.eprintf "parse error\n"; exit 1
 
@@ -120,4 +125,5 @@ let repl () =
     state = Start_mode;
     stack = [];
     logic = ALL;
+    model = function _ -> None
   }

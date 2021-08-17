@@ -3,7 +3,7 @@ open Modulus_lib.Qf_lia
 
 let ensure_sat msg (a : atom) =
   Printf.printf "[sat] %s\n" msg;
-  assert (lia1 a = SAT)
+  assert (is_sat (lia1 a))
 
 let ensure_unsat msg (a : atom) =
   Printf.printf "[unsat] %s\n" msg;

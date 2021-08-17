@@ -10,9 +10,9 @@ let dpllt f =
   in
   solve_all cnf
   |> map (call_theory lia)
-  |> find_first ((=) SAT) ~default:UNSAT
+  |> find_first is_sat ~default:UNSAT
 
 let answer_to_string = function
-  | SAT -> "sat"
+  | SAT _ -> "sat"
   | UNSAT -> "unsat"
   | UNKNOWN -> "unknown"
