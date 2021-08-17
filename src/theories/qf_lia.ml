@@ -9,16 +9,16 @@ open Logic
 
 type anwser = SAT | UNSAT | UNKNOWN
 
-(** 
+(**
   Solve a single arithmetic goal
 *)
 let lia1 (a : atom) : anwser =
   match a with
-  | Eq(Var _, Var _) -> SAT
-  | Eq(Cst x, Cst y) ->
+  | Eq (Var _, Var _) -> SAT
+  | Eq (Cst x, Cst y) ->
     if x = y then SAT else UNSAT
-  | Eq(Var _, Cst _)
-  | Eq(Cst _, Var _) -> SAT
+  | Eq (Var _, Cst _)
+  | Eq (Cst _, Var _) -> SAT
   | _ -> UNKNOWN
 
 
