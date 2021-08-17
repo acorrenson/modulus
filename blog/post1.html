@@ -25,66 +25,85 @@
     Les solveurs SMT peuvent-être vus comme des machines capables de résoudre le problème suivant :
   <ul>
     <li><b>Entrée</b> : une formule de la logique faisant intervenir des théories spécifiques. <br> Par
-      exemple la formule <math>(x &le; 2) &and; (x &ge; 10)</math> faisant intervenir la théorie de l'arithmétique
-      linéaire sur les nombres entiers (<math>x &isin; N</math>).
+      exemple la formule <span class="math">(x &le; 2) &and; (x &ge; 10)</span> faisant intervenir la théorie de
+      l'arithmétique
+      linéaire sur les nombres entiers (<span class="math">x &isin; N</span>).
     </li>
     <li><b>Sortie</b> : <i>"Oui"</i> s'il existe une affectation des variables qui satisfait la formule, <i>"Non"</i>
       sinon.
     </li>
   </ul>
-  Dans l'exemple donné, le solveur SMT répond <i>"Non"</i> car il n'existe aucun entier <math>n</math> qui satisfait à
-  la fois <math>n &le; 2</math> et <math>n &ge; 10</math>.
+  Dans l'exemple donné, le solveur SMT répond <i>"Non"</i> car il n'existe aucun entier <span class="math">n</span> qui
+  satisfait à
+  la fois <span class="math">n &le; 2</span> et <span class="math">n &ge; 10</span>.
   </p>
   <p>
-    Toutefois, les solveurs SMT sont généralement conçus comme une extension d'un solveur SAT, c'est à dire des solveurs
+    Toutefois, les solveurs SMT sont généralement conçus comme une extension d'un solveur SAT, c'est à dire des
+    solveurs
     qui se limite à la résolution de formules booléennes :
   <ul>
-    <li><b>Entrée</b> : une formule de la logique booléenne, par exemple <math>(x &or; &not;y)</math> (<math>x, y
-        &isin; {vrai, faux}</math>).
+    <li><b>Entrée</b> : une formule de la logique booléenne, par exemple <span class="math">(x &or; &not;y)</span>
+      (<span class="math">x, y
+        &isin; {vrai, faux}</span>).
     </li>
-    <li><b>Sortie</b> : <i>"Oui"</i> s'il existe une valeur de vérité (vrai ou faux) pour les variables telle que la
+    <li><b>Sortie</b> : <i>"Oui"</i> s'il existe une valeur de vérité (vrai ou faux) pour les variables telle que
+      la
       formule
       est vraie. <i>"Non"</i> sinon.
     </li>
   </ul>
-  Pour la formule de l'exemple, le solveur répond <i>"Oui"</i> car <math>y := faux</math> est une solution.
+  Pour la formule de l'exemple, le solveur répond <i>"Oui"</i> car <span class="math">y := faux</span> est une
+  solution.
   </p>
   <h3>Communication entre un solveur SAT et un solveur spécialisé dans une théorie</h3>
   <p>
     Pour se simplifier la tâche dans un premier temps, supposons que nous avons sous la main un solveur
-    <math>S</math> qui prend en entrée un ensemble de formules de l'arithmétique sur les nombres entiers et qui répond
+    <span class="math">S</span> qui prend en entrée un ensemble de formules de l'arithmétique sur les nombres
+    entiers et qui répond
     <i>"Oui"</i> s'il
-    existe une affectation des variables qui satisfait toutes ces formules en même temps. On suppose également que nous
-    disposons d'un bon solveur SAT. Nous allons voir que ces deux élements suffisent à construire un prototype de
+    existe une affectation des variables qui satisfait toutes ces formules en même temps. On suppose également
+    que nous
+    disposons d'un bon solveur SAT. Nous allons voir que ces deux élements suffisent à construire un prototype
+    de
     solveur SMT.
   </p>
   <p>
     Étant donné une formule en entrée d'un solveur SMT, on peut commencer par ignorer les sous-formules
     faisant
     intervenir
-    des théories spécifiques et voire la formule comme une formule booléenne. Par exemple, la formule <math>(1 &ne; 1)
+    des théories spécifiques et voire la formule comme une formule booléenne. Par exemple, la formule <span
+      class="math">(1 &ne; 1)
       &or;
       (x =
-      10)</math> peut être vue comme la formule booléenne <math>X &or; Y</math> (on garde en mémoire l'association
-    <math>X &iff; (1 &ne; 1), Y &iff; (x = 10)</math>). On peut ensuite demander à un solveur SAT de résoudre cette
+      10)</span> peut être vue comme la formule booléenne <span class="math">X &or; Y</span> (on garde en
+    mémoire l'association
+    <span class="math">X &iff; (1 &ne; 1), Y &iff; (x = 10)</span>). On peut ensuite demander à un solveur
+    SAT de résoudre cette
     formule.
   </p>
   <p>
-    Dans notre exemple, le solveur SAT répond "Oui" et peut donner comme solution <math>X :=
+    Dans notre exemple, le solveur SAT répond "Oui" et peut donner comme solution <span class="math">X :=
       vrai, Y :=
-      faux</math>. On demande ensuite au solveur
-    spécialisé S s'il est effectivement possible de rendre <math>X</math> vraie et <math>Y</math> fausse en même temps
+      faux</span>. On demande ensuite au solveur
+    spécialisé S s'il est effectivement possible de rendre <span class="math">X</span> vraie et <span
+      class="math">Y</span> fausse en même temps
     (ce qui est
-    équivalent à rendre <math>X</math> et <math>&not;Y</math> vraies en même temps donc <math>1
+    équivalent à rendre <span class="math">X</span> et <span class="math">&not;Y</span> vraies en même
+    temps donc <span class="math">1
       &ne;
-      1</math> et <math>x &ne; 10</math>).
-    Bien entendu, la réponse est <i>"Non"</i>. Toutefois, on peut ré-interroger le solveur SAT pour savoir s'il existe
+      1</span> et <span class="math">x &ne; 10</span>).
+    Bien entendu, la réponse est <i>"Non"</i>. Toutefois, on peut ré-interroger le solveur SAT
+    pour savoir s'il existe
     une autre solution. Dans
-    notre cas, <math>X := faux, Y := vrai</math> est également une solution de la formule booléenne. On peut à nouveau
-    demander au solveur S s'il est possible de rendre <math>X</math> fausse et <math>Y</math> vraie. Cette
+    notre cas, <span class="math">X := faux, Y := vrai</span> est également une solution de la
+    formule booléenne. On peut à nouveau
+    demander au solveur S s'il est possible de rendre <span class="math">X</span> fausse et
+    <span class="math">Y</span> vraie. Cette
     fois-ci la réponse
-    est <i>"Oui"</i> et une solution (d'ailleurs unique) au problème est <math>x := 10</math>. Si le solveur SAT ne
-    trouve jamais de solution, on sait que la formule est fondamentalement fausse indépendamment du solveur.
+    est <i>"Oui"</i> et une solution (d'ailleurs unique) au problème est <span class="math">x := 10</span>. Si le
+    solveur SAT ne
+    trouve jamais de solution, on sait que la formule est fondamentalement fausse
+    indépendamment du solveur.
   </p>
   <p>
     D'une façon plus générale, cette algorithme peut-être synthétisé comme suit :
@@ -104,15 +123,20 @@
       répondre "Non"
   </pre></code>
   <p>
-    Dans la littérature scientifique, cette méthode algorithmique pour résoudre les problèmes SMT est connue sous le nom
-    de "DPLL(T)". Ce nom provient de l'algorithme DPLL qui est un algorithme bien connu pour résoudre le problème SAT.
+    Dans la littérature scientifique, cette méthode algorithmique pour résoudre les problèmes SMT est connue
+    sous le nom
+    de "DPLL(T)". Ce nom provient de l'algorithme DPLL qui est un algorithme bien connu pour résoudre le
+    problème SAT.
     Comme nous venons de le voir, on peut étendre cet algorithme pour la résolution de formules d'une théorie T
     moyennant un solveur spécialisé pour cette théorie.
   </p>
   <h3>Résumé</h3>
-  En résumé de ce court article introductif : les solveurs SMT sont des bestioles vâchement compliquées mais on peut
-  s'en sortir en se rattachant à des problèmes plus simples comme SAT. En particulier on a vu qu'un bon solveur SAT
-  était une pièce maîtresse dans un solveur SMT, c'est donc l'une des premières choses que nous allons développer dans
+  En résumé de ce court article introductif : les solveurs SMT sont des bestioles vâchement compliquées mais on
+  peut
+  s'en sortir en se rattachant à des problèmes plus simples comme SAT. En particulier on a vu qu'un bon solveur
+  SAT
+  était une pièce maîtresse dans un solveur SMT, c'est donc l'une des premières choses que nous allons
+  développer dans
   les semaines à venir.
 
   <h3>Références</h3>

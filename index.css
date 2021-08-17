@@ -2,8 +2,9 @@
   font-family: monospace;
 } */
 
-math {
+.math {
   color: brown;
+  font-family: monospace;
 }
 
 body {

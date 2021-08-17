@@ -54,34 +54,51 @@
     (exit)
   </code></pre>
   Le fichier SMT-LIB ci dessus règle le solveur pour l'utilisation de la théorie de l'arithmétique linéaire entière et
-  sans quantificateurs, déclare une variable <math>x</math> de type <math>Int</math> et demande si la formule
-  <math>x = 1 &wedge; x = 2</math> est satisfiable. Ici la formule
+  sans quantificateurs, déclare une variable <span class="math">x</span> de type <span class="math">Int</span> et
+  demande si la formule
+  <span class="math">x = 1 &wedge; x = 2</span> est satisfiable. Ici la formule
   n'est pas satisfiable, mais dans le cas contraire on peut obtenir un modèle
-  en utilisant la commande <math>(get-model)</math>. Il existe beaucoup d'autres commandes mais dans un premier temps
-  les commandes <math>(set-logic ...)</math>, <math>(declare-const ...)</math>, <math>(assert ...)</math>,
-  <math>(check-sat)</math>, <math>(get-model)</math> et <math>(exit)</math> nous suffiront pour la plupart des usages.
+  en utilisant la commande <span class="math">(get-model)</span>. Il existe beaucoup d'autres commandes mais dans
+  un premier temps
+  les commandes <span class="math">(set-logic ...)</span>, <span class="math">(declare-const ...)</span>, <span
+    class="math">(assert ...)</span>,
+  <span class="math">(check-sat)</span>, <span class="math">(get-model)</span> et <span class="math">(exit)</span> nous
+  suffiront pour la plupart des usages.
   <h3>Définition des commandes usuelles</h3>
   <ul>
-    <li><math>(set-logic &lt;logic&gt;)</math>:
-      Cette commande est la première commande qui doit apparaître dans un fichier SMT-LIB. Elle configure les théories
-      que le solveur est autorisé à utiliser au cours de la résolution. Les différentes combinaisons de théories sont
-      appelés des <i>logics</i> dans le standard SMT-LIB. Par exemple, <b>QF_LIA</b> désigne la théorie de
-      l'arithmétique linéaire sans quantificateurs sur les nombres entiers (<i>Quantifier Free Linear Integer
-        Arithmetic</i>). Si l'on souhaite activer toutes les théories supportées par le solveur, on peut passer le mot
+    <li><span class="math">(set-logic &lt;logic&gt;)</span>:
+      Cette commande est la première commande qui doit apparaître dans un fichier SMT-LIB. Elle
+      configure les théories
+      que le solveur est autorisé à utiliser au cours de la résolution. Les différentes
+      combinaisons de théories sont
+      appelés des <i>logics</i> dans le standard SMT-LIB. Par exemple, <b>QF_LIA</b> désigne la
+      théorie de
+      l'arithmétique linéaire sans quantificateurs sur les nombres entiers (<i>Quantifier Free
+        Linear Integer
+        Arithmetic</i>). Si l'on souhaite activer toutes les théories supportées par le solveur,
+      on peut passer le mot
       clef <b>ALL</b> en paramètre.
     </li>
-    <li><math>(assert &lt;formula&gt;)</math>: La commande <b>assert</b> permet d'ajouter une formule à résoudre dans le
+    <li><span class="math">(assert &lt;formula&gt;)</span>: La commande <b>assert</b> permet
+      d'ajouter une formule à résoudre dans le
       contexte actuelle. Les formules sont écrites sous forme de <a
-        href="https://fr.wikipedia.org/wiki/S-expression">S-expressions</a>. Par exemple la formule <math>(p &wedge; q)
-        &vee; &not; r</math> s'écrit <math>(or (and p q) (not r))</math>
+        href="https://fr.wikipedia.org/wiki/S-expression">S-expressions</a>. Par exemple la
+      formule <span class="math">(p &wedge; q)
+        &vee; &not; r</span> s'écrit <span class="math">(or (and p q) (not r))</span>
     </li>
-    <li><math>(declare-const &lt;x&gt; &lt;t&gt;)</math>: La commande <b>declare-const</b> permet de déclarer une
-      nouvelle variable et son type. Dans un premier temps, nous supporterons uniquement les variables de type
-      <math>Int</math>. Les variables non déclarées provoquent une erreur à l'exécution du solveur.
+    <li><span class="math">(declare-const &lt;x&gt; &lt;t&gt;)</span>: La commande
+      <b>declare-const</b> permet de déclarer une
+      nouvelle variable et son type. Dans un premier temps, nous supporterons uniquement les
+      variables de type
+      <span class="math">Int</span>. Les variables non déclarées provoquent une erreur à
+      l'exécution du solveur.
     </li>
-    <li><math>(check-sat)</math>: cette commande demande au solveur de vérifier la satisfiabilité de l'ensemble des
-      formules précédemment enregistrées via la commande <math>(assert ...)</math>. Notons que l'on peut très bien
-      demander plusieurs fois de vérifier la satisfiabilité tout en ayant rajouté des nouvelles formules entre temps :
+    <li><span class="math">(check-sat)</span>: cette commande demande au solveur de vérifier la
+      satisfiabilité de l'ensemble des
+      formules précédemment enregistrées via la commande <span class="math">(assert ...)</span>.
+      Notons que l'on peut très bien
+      demander plusieurs fois de vérifier la satisfiabilité tout en ayant rajouté des nouvelles
+      formules entre temps :
       <pre><code>
         (assert (x = 1))
         (check-sat)
@@ -91,21 +108,27 @@
         ; UNSAT
       </code></pre>
     </li>
-    <li><math>(exit)</math>: cette commande marque la fin de l'execution d'un script</li>
+    <li><span class="math">(exit)</span>: cette commande marque la fin de l'execution d'un script
+    </li>
   </ul>
   <h3>S-expressions en OCaml</h3>
   <p>
-    Le langage SMT-LIB est basé sur l'usage des S-expressions. Il s'agit d'une notation très simple pour décrire des
-    programmes ou des données dans un format textuel. Formellement, une S-expression est soit un symbole (par exemple,
-    un nom de variable <math>x</math> ou la constante <math>1</math>) soit une liste de S-expressions délimitée par des
+    Le langage SMT-LIB est basé sur l'usage des S-expressions. Il s'agit d'une notation très simple
+    pour décrire des
+    programmes ou des données dans un format textuel. Formellement, une S-expression est soit un
+    symbole (par exemple,
+    un nom de variable <span class="math">x</span> ou la constante <span class="math">1</span>) soit
+    une liste de S-expressions délimitée par des
     parenthèses :
   </p>
   <pre><code>
     &lt;s-expr&gt; ::= &lt;symbol&gt; | ( &lt;s-expr&gt;* )
   </code></pre>
   <p>
-    Pour le moment, les seuls symboles qui nous intéressent sont les identifiants comme les noms de variable et les
-    noms de commande ainsi que les constantes entières. Les S-expressions s'encode alors en OCaml par le type suivant :
+    Pour le moment, les seuls symboles qui nous intéressent sont les identifiants comme les noms de
+    variable et les
+    noms de commande ainsi que les constantes entières. Les S-expressions s'encode alors en OCaml
+    par le type suivant :
   </p>
   <pre><code>
     type sexp =
@@ -114,7 +137,8 @@
       | Cons of sexp list
   </code></pre>
   <p>
-    Chaque commande SMT-LIB est représentée par une S-expression et un script est une liste de plusieurs commandes.
+    Chaque commande SMT-LIB est représentée par une S-expression et un script est une liste de
+    plusieurs commandes.
     Ainsi, le fichier SMT-LIB présenté plus tôt peut-être modélisé en OCaml de la façon suivante :
   </p>
   <pre><code>
@@ -130,68 +154,103 @@
     ]
   </code></pre>
   <p>
-    Nous souhaitons à présent écrire un parser qui extrait ce type de représentation à partir d'un fichier texte au
+    Nous souhaitons à présent écrire un parser qui extrait ce type de représentation à partir d'un
+    fichier texte au
     format SMT-LIB. Pour se faire, nous utiliserons une technique simple de <i>parsing</i> par <a
       href="https://en.wikipedia.org/wiki/Parser_combinator">combinateurs</a>.
   </p>
   <h3>Parseurs Combinateurs</h3>
   <p>
-    Un parseur est une fonction de type <math>string &rightarrow; t</math> où <math>t</math> est un type
+    Un parseur est une fonction de type <span class="math">string &rightarrow; t</span> où <span class="math">t</span>
+    est un type
     quelconque qui
-    représente une information à extraire d'un texte. Dans notre cas, nous souhaitons extraire une représentation
-    structurée des S-expressions à partir d'un texte, notre parser sera donc une fonction de la forme <math>parse_sexpr
-      : string &rightarrow; sexp</math>. Il existe plusieurs techniques qui permettent de programmer une telle fonction.
-    Ici, nous allons utiliser un <b>parseur combinateur</b>. Il s'agit d'une technique de <i>parsing</i> qui se met très
-    facilement en oeuvre dans un langage de programmation fonctionnelle et qui repose sur l'idée de combiner plusieurs
-    petits parseurs (donc plusieurs petites fonctions de type <math>string &rightarrow; t</math>) en utilisant des
+    représente une information à extraire d'un texte. Dans notre cas, nous souhaitons extraire
+    une représentation
+    structurée des S-expressions à partir d'un texte, notre parser sera donc une fonction de la
+    forme <span class="math">parse_sexpr
+      : string &rightarrow; sexp</span>. Il existe plusieurs techniques qui permettent de
+    programmer une telle fonction.
+    Ici, nous allons utiliser un <b>parseur combinateur</b>. Il s'agit d'une technique de
+    <i>parsing</i> qui se met très
+    facilement en oeuvre dans un langage de programmation fonctionnelle et qui repose sur
+    l'idée de combiner plusieurs
+    petits parseurs (donc plusieurs petites fonctions de type <span class="math">string
+      &rightarrow; t</span>) en utilisant des
     opérateurs
-    appellés combinateurs. Par exemple, étant donné deux fonctions <math>parserA : string &rightarrow; string</math> et
-    <math>parserB
-      : string &rightarrow; string</math> qui détectent respectivement les mots clefs <math>"A"</math> et
-    <math>"B"</math>,
+    appellés combinateurs. Par exemple, étant donné deux fonctions <span class="math">parserA : string &rightarrow;
+      string</span> et
+    <span class="math">parserB
+      : string &rightarrow; string</span> qui détectent respectivement les mots clefs
+    <span class="math">"A"</span> et
+    <span class="math">"B"</span>,
     on
     peut obtenir les parseurs suivants :
   <ul>
-    <li><math>parserA | parserB</math> qui reconnaît soit <math>"A"</math> soit <math>"B"</math></li>
-    <li><math>(parserA)*</math> qui reconnaît zero ou plusieurs fois <math>"A"</math></li>
-    <li><math>(parserA)+</math> qui reconnaît une ou plusieurs fois <math>"B"</math></li>
+    <li><span class="math">parserA | parserB</span> qui reconnaît soit <span class="math">"A"</span> soit <span
+        class="math">"B"</span></li>
+    <li><span class="math">(parserA)*</span> qui reconnaît zero ou plusieurs fois
+      <span class="math">"A"</span>
+    </li>
+    <li><span class="math">(parserA)+</span> qui reconnaît une ou plusieurs fois
+      <span class="math">"B"</span>
+    </li>
   </ul>
-  On peut également faire des manipulations plus sophistiquées comme par exemple combiner des parseurs avec des
-  applications de fonctions. Par exemple, si on se donne une fonction <math>to_lower : string &rightarrow;
-    string</math> qui converti
-  une chaîne de caractères capitales en caractères minuscules, on peut construire un parseur <math>
+  On peut également faire des manipulations plus sophistiquées comme par exemple
+  combiner des parseurs avec des
+  applications de fonctions. Par exemple, si on se donne une fonction <span class="math">to_lower : string &rightarrow;
+    string</span> qui converti
+  une chaîne de caractères capitales en caractères minuscules, on peut
+  construire un parseur <span class="math">
     (parserA &Rightarrow;
-    to_lower)</math> qui reconnaît le mot clef <math>"a"</math>.
+    to_lower)</span> qui reconnaît le mot clef <span class="math">"a"</span>.
   </p>
   <p>
-    Cette technique est par essence très modulaire et permet aisément de fabriquer des parseurs de complexité croissante
-    à moindre coût. La seule difficulté est d'implémenter un catalogue initial de parseurs utiles (par exemple
-    des parseurs qui reconnaissent les constantes entières, les mots alphanumériques, les symboles de ponctuations etc)
-    et de combinateurs pour les composer entre eux. Une fois ces élements fournis, il est très facile de construire des
-    parseurs plus sophistiqués en combinant les parseurs existants. Nous avons développé un module minimaliste appellé
-    <a href="https://github.com/jdrprod/modulus/blob/main/src/utils/parsing.ml">Parsing</a> qui propose quelques
-    combinateurs utiles. Nous reviendrons certainement sur l'implémentation détaillée de ce module dans un futur poste.
+    Cette technique est par essence très modulaire et permet aisément de fabriquer des parseurs de
+    complexité croissante
+    à moindre coût. La seule difficulté est d'implémenter un catalogue initial de parseurs utiles
+    (par exemple
+    des parseurs qui reconnaissent les constantes entières, les mots alphanumériques, les symboles
+    de ponctuations etc)
+    et de combinateurs pour les composer entre eux. Une fois ces élements fournis, il est très
+    facile de construire des
+    parseurs plus sophistiqués en combinant les parseurs existants. Nous avons développé un module
+    minimaliste appellé
+    <a href="https://github.com/jdrprod/modulus/blob/main/src/utils/parsing.ml">Parsing</a> qui
+    propose quelques
+    combinateurs utiles. Nous reviendrons certainement sur l'implémentation détaillée de ce module
+    dans un futur poste.
   </p>
   <h3>Conversions et typage</h3>
   <p>
-    Une fois que nous avons le moyen de lire une entrée au format SMT-LIB et de la convertir en une valeur OCaml de type
-    <math>sexp</math>, il reste quelques problèmes à adresser. Tout d'abord, la logique de SMT-LIB est une logique du
-    premier ordre <b>typée</b>. La formule <math>(forall ((x Int) (y Real)) (= x y))</math> par exemple est incorrecte
+    Une fois que nous avons le moyen de lire une entrée au format SMT-LIB et de la convertir en une
+    valeur OCaml de type
+    <span class="math">sexp</span>, il reste quelques problèmes à adresser. Tout d'abord, la logique
+    de SMT-LIB est une logique du
+    premier ordre <b>typée</b>. La formule <span class="math">(forall ((x Int) (y Real)) (= x
+      y))</span> par exemple est incorrecte
     car
-    les types <math>Int</math> et <math>Real</math> ne sont pas compatibles. Il nous faut donc développer un
-    vérificateur de types qui assure que les formules décrites dans un fichier SMT soient correctement typées. D'une
-    manière générale, manipuler une valeur de type <math>sexp</math> n'est pas très confortable, c'est un format
-    très générique qui ne représente pas forcément du code SMT-LIB valide. Avant de se soucier de la vérification des
-    types, on commence donc par convertir les S-expressions en une structure plus simple qui encode <b>uniquement</b>
+    les types <span class="math">Int</span> et <span class="math">Real</span> ne sont pas
+    compatibles. Il nous faut donc développer un
+    vérificateur de types qui assure que les formules décrites dans un fichier SMT soient
+    correctement typées. D'une
+    manière générale, manipuler une valeur de type <span class="math">sexp</span> n'est pas
+    très confortable, c'est un format
+    très générique qui ne représente pas forcément du code SMT-LIB valide. Avant de se
+    soucier de la vérification des
+    types, on commence donc par convertir les S-expressions en une structure plus simple
+    qui encode <b>uniquement</b>
     les constructions syntaxique autorisées par le standard SMT.
   </p>
   <p>
-    On distingue plusieurs parties dans un fichier SMT-LIB. D'une part les commandes et d'autre part les formules. Nous
+    On distingue plusieurs parties dans un fichier SMT-LIB. D'une part les commandes et d'autre part
+    les formules. Nous
     modélisons les deux par des types OCaml.
   </p>
   <p>
-    Comme dit plus tôt, nous commençons par considérer uniquement des problèmes d'arithmétique entière faisant
-    intervenir l'égalité, l'addition des variables entières et des constantes. Un terme à donc la forme suivante :
+    Comme dit plus tôt, nous commençons par considérer uniquement des problèmes d'arithmétique
+    entière faisant
+    intervenir l'égalité, l'addition des variables entières et des constantes. Un terme à donc la
+    forme suivante :
   </p>
   <pre><code>
     type term =
@@ -199,15 +258,18 @@
       | Cst of int
   </code></pre>
   <p>
-    Les formules atomiques sont les assertions de taille minimales que l'on peut faire sur des termes de type entier.
-    Dans notre cas, les formules atomiques sont uniquement des égalités mais nous étendrons ces possibilités plus tard.
+    Les formules atomiques sont les assertions de taille minimales que l'on peut faire sur des
+    termes de type entier.
+    Dans notre cas, les formules atomiques sont uniquement des égalités mais nous étendrons ces
+    possibilités plus tard.
   </p>
   <pre><code>
     type atom =
       | Eq of term * term
   <code></pre>
   <p>
-    Enfin, nous pouvons construire des formules plus complexes en combinant des formules atomiques avec des opérateurs
+    Enfin, nous pouvons construire des formules plus complexes en combinant des formules atomiques
+    avec des opérateurs
     logiques.
   </p>
   <pre><code>
@@ -221,12 +283,18 @@
       | Assert of formula
   </code></pre>
   <p>
-    Le type <math>formula</math> représente les formules logiques que notre solveur pourra manipuler. Il reste à
-    représenter les commandes du standard SMT-LIB. Nous déclarons un type <math>command</math> qui permet de représenter
-    une commande ainsi que le type <math>smt_logic</math> pour représenter les noms des différentes logiques du standard
-    SMT-LIB et un type <math>smt_type</math> pour représenter les différents types. Seul les types <math>Int</math>
-    (pour les constantes et variables entières) et <math>Bool</math> (pour les formules) sont nécessaire pour le
-    moment. De même, nous ne déclarons que les logiques <math>ALL</math> et <math>QF_LIA</math>.
+    Le type <span class="math">formula</span> représente les formules logiques que notre solveur
+    pourra manipuler. Il reste à
+    représenter les commandes du standard SMT-LIB. Nous déclarons un type <span class="math">command</span> qui permet
+    de représenter
+    une commande ainsi que le type <span class="math">smt_logic</span> pour représenter les noms
+    des différentes logiques du standard
+    SMT-LIB et un type <span class="math">smt_type</span> pour représenter les différents
+    types. Seul les types <span class="math">Int</span>
+    (pour les constantes et variables entières) et <span class="math">Bool</span> (pour
+    les formules) sont nécessaire pour le
+    moment. De même, nous ne déclarons que les logiques <span class="math">ALL</span> et
+    <span class="math">QF_LIA</span>.
   </p>
   <pre><code>
     type smt_type = Int | Bool
@@ -259,16 +327,23 @@
     ]
   </code></pre>
   <p>
-    Cet encodage est beaucoup plus précis que l'encodage sous forme de S-expression et permet de raisonner sur les
+    Cet encodage est beaucoup plus précis que l'encodage sous forme de S-expression et permet de
+    raisonner sur les
     entrées sans faire d'hypothèses sur la forme des S-expressions.
   </p>
   <p>
-    Pour vérifier le bon typage d'un fichier SMT-LIB, nous implémentons une fonction <math>type_check_script : script
-      &rightarrow; unit</math> qui lève une exception si le script passé en paramètre est mal typé. On distingue
-    plusieurs erreurs de typage : les incompatibilités de types (par exemple une addition entre un entier et un réel),
-    les imprécisions (une variable non déclarée par exemple) et les ambiguïtés (une variable déclarée plusieurs fois
-    avec des types différents par exemple). Notons qu'au regard de la logique très minimaliste que nous considérons,
-    seules les imprécisions et les ambiguïtés peuvent se produire car toutes les formules atomiques sont nécessairement
+    Pour vérifier le bon typage d'un fichier SMT-LIB, nous implémentons une fonction <span
+      class="math">type_check_script : script
+      &rightarrow; unit</span> qui lève une exception si le script passé en paramètre est mal typé.
+    On distingue
+    plusieurs erreurs de typage : les incompatibilités de types (par exemple une addition entre un
+    entier et un réel),
+    les imprécisions (une variable non déclarée par exemple) et les ambiguïtés (une variable
+    déclarée plusieurs fois
+    avec des types différents par exemple). Notons qu'au regard de la logique très minimaliste que
+    nous considérons,
+    seules les imprécisions et les ambiguïtés peuvent se produire car toutes les formules
+    atomiques sont nécessairement
     bien typée.
   </p>
   <pre><code>
@@ -278,13 +353,18 @@
     exception NoType of string
   </code></pre>
   <p>
-    Pour écrire un vérificateur de type, nous avons besoin de conserver en mémoire les types des variables déjà connues
-    ou déclarées. Pour se faire, on utilise une table de <i>hash</i> qui à chaque nom de variable associe un type. Cette
+    Pour écrire un vérificateur de type, nous avons besoin de conserver en mémoire les types des
+    variables déjà connues
+    ou déclarées. Pour se faire, on utilise une table de <i>hash</i> qui à chaque nom de variable
+    associe un type. Cette
     table est appellée <b>environnement de typage</b>.
     Lorsque l'on vérifie le bon typage d'une commande,
-    si la commande est de la forme <math>DeclareConst (x, tx)</math> on met à jour l'environnement de typage en
-    associant le type <math>tx</math> à la variable <math>x</math>. Si la variable est déjà déclarée on lève une
-    exception. Pour évaluer un script, on commence par créer un nouvel environnement de typage vide puis on vérifie
+    si la commande est de la forme <span class="math">DeclareConst (x, tx)</span> on met à jour
+    l'environnement de typage en
+    associant le type <span class="math">tx</span> à la variable <span class="math">x</span>. Si
+    la variable est déjà déclarée on lève une
+    exception. Pour évaluer un script, on commence par créer un nouvel environnement de typage
+    vide puis on vérifie
     dans l'ordre le typage de toutes les commandes du script.
   </p>
   <pre><code>
@@ -323,16 +403,22 @@
   </code></pre>
   <h3>Et ensuite ?</h3>
   <p>
-    Les ajouts que nous avons faits permettent un support très minimaliste pour la lecture du format SMT-LIB. En
-    décomposant la lecture des entrées en deux étapes (une étape de lecture de S-expressions, puis une étape de
-    conversion des S-expression en commandes), nous rendons possible l'ajout progressif de nouvelles <i>features</i> du
-    standard SMT-LIB sans pour autant avoir à réécrire notre parseur à chaque fois. Seules les conversions <math>sexp
+    Les ajouts que nous avons faits permettent un support très minimaliste pour la lecture du format
+    SMT-LIB. En
+    décomposant la lecture des entrées en deux étapes (une étape de lecture de S-expressions, puis
+    une étape de
+    conversion des S-expression en commandes), nous rendons possible l'ajout progressif de nouvelles
+    <i>features</i> du
+    standard SMT-LIB sans pour autant avoir à réécrire notre parseur à chaque fois. Seules les
+    conversions <span class="math">sexp
       &rightarrow;
-      command</math> doivent être faites ce qui est généralement très simple.
+      command</span> doivent être faites ce qui est généralement très simple.
   </p>
   <p>
-    Même si, pour l'instant, nous ne supportons qu'un sous ensemble très restreint du standard SMT-LIB, le fragment que
-    nous avons décrit aujourd'hui nous permettra déjà de mettre en pratique quelques algorithmes de résolution pour
+    Même si, pour l'instant, nous ne supportons qu'un sous ensemble très restreint du standard
+    SMT-LIB, le fragment que
+    nous avons décrit aujourd'hui nous permettra déjà de mettre en pratique quelques algorithmes de
+    résolution pour
     décider des problèmes d'arithmétiques simples.
   </p>
 
