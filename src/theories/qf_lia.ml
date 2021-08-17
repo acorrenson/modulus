@@ -73,6 +73,8 @@ let maybe_sat r =
   | SAT _ -> UNKNOWN
   | _ -> r
 
+let debug m x = match m x with Some x -> string_of_int x | _ -> "?"
+
 (**
   Solve a list of arithmetic goals under the hypothesis
   that goals are independants (don't share variables)
@@ -84,7 +86,8 @@ let rec lia_indep (l : atom list) : anwser =
     match lia1 eq with
     | SAT m ->
       begin match lia_indep eqs with
-      | SAT m' -> SAT (Models.merge_model m m')
+      | SAT m' ->
+        SAT (Models.merge_model m m')
       | _ as r -> r
       end
     | UNSAT -> UNSAT
@@ -96,3 +99,4 @@ let lia (l : atom list) : anwser =
   else UNKNOWN
 
 let is_sat = function SAT _ -> true | _ -> false
+

@@ -12,7 +12,7 @@ type context = {
   state : smt_state;
   stack : formula list;
   logic : Scripts.smt_logic;
-  model : Qf_lia.Models.model;
+  model : Qf_lia.anwser;
 }
 
 let do_assert ctx f =
@@ -54,18 +54,18 @@ let do_check_sat ctx =
   | Start_mode ->
     Printf.eprintf "(error \"nothing to check\")\n"; ctx
   | _ ->
-    let sat () =
-      Printf.eprintf "sat\n"; { ctx with state = Sat_mode } in
+    let sat m =
+      Printf.eprintf "sat\n"; { ctx with state = Sat_mode; model = m } in
     let unsat () =
       Printf.eprintf "unsat\n"; { ctx with state = Unsat_mode } in
     let unknown () =
       Printf.eprintf "unknown\n"; { ctx with state = Sat_mode } in
     match ctx.stack with
-    | [] -> sat ()
+    | [] -> sat (SAT (fun _ -> None))
     | l::ls ->
       let f = List.fold_left (fun acc f -> And (acc, f)) l ls in
       match dpllt f with
-      | SAT _ -> sat ()
+      | SAT _ as m -> sat m
       | UNSAT -> unsat ()
       | UNKNOWN -> unknown ()
 
@@ -74,7 +74,12 @@ let do_get_model ctx =
   | Sat_mode ->
     let vars = List.fold_left VSet.union VSet.empty (List.map Logic.vars ctx.stack) in
     VSet.iter (fun x ->
-      Printf.eprintf "%s -> %d\n" x (Option.get (ctx.model x))
+      match ctx.model with
+      | SAT m ->
+        Printf.eprintf "%s -> %d\n" x (Option.get (m x))
+      | UNKNOWN -> ()
+      | UNSAT ->
+        Printf.eprintf "(error \"internal error\")\n"; exit 1
     ) vars;
     { ctx with state = Sat_mode }
   | _ ->
@@ -104,7 +109,7 @@ let batch f =
       state = Start_mode;
       stack = [];
       logic = ALL;
-      model = function _ -> None
+      model = UNKNOWN;
     } sxp
   | _ -> Printf.eprintf "parse error\n"; exit 1
 
@@ -125,5 +130,5 @@ let repl () =
     state = Start_mode;
     stack = [];
     logic = ALL;
-    model = function _ -> None
+    model = UNKNOWN;
   }

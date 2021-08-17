@@ -37,11 +37,14 @@ let rec vars (f : formula) : VSet.t =
   | Atom a -> avars a
 
 let are_independants (al : atom list) : bool =
-  let collect acc a = VSet.inter acc (avars a) in
-  match al with
-  | [] -> true
-  | a::al ->
-    List.fold_left collect (avars a) al |> VSet.is_empty
+  let rec step seen = function
+    | [] -> true
+    | x::xs ->
+      let v = avars x in
+      if VSet.exists (fun x -> VSet.mem x seen) v
+      then false
+      else step (VSet.union seen v) xs
+  in step VSet.empty al
 
 module Cnf = struct
   type t =

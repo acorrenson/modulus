@@ -1,6 +1,5 @@
 (set-logic ALL)
 (declare-const x Int)
 (assert (= x x))
-(assert (= 1 1))
 (check-sat)
 (get-model)
