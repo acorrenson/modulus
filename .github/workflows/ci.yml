@@ -20,5 +20,4 @@ jobs:
           opam install dune odoc
           dune build
           dune build @doc
-      - name: Test
-        run: dune exec -- test
+          dune exec -- test
