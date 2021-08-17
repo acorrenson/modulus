@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v1.1.11
+        with:
+          ocaml-version: 4.12.0
+      - name: Build
+        run: |
+          eval $(opam env)
+          opam install dune odoc
+          dune build
+          dune build @doc
+      - name: Test
+        run: dune exec -- test
