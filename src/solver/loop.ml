@@ -57,7 +57,7 @@ let do_check_sat ctx =
     let sat m =
       Printf.eprintf "sat\n"; { ctx with state = Sat_mode; model = m } in
     let unsat () =
-      Printf.eprintf "unsat\n"; { ctx with state = Unsat_mode } in
+      Printf.eprintf "unsat\n"; { ctx with state = Unsat_mode; model = UNSAT } in
     let unknown () =
       Printf.eprintf "unknown\n"; { ctx with state = Sat_mode } in
     match ctx.stack with
