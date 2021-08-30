@@ -18,7 +18,7 @@ Modulus is an attempt at developing a tiny SMT in OCaml from scratch with no dep
 
 ## Disclaimer
 
-Modulus is not indented to be an efficient nor complete solver. It is designed to be an educative project and I'm pretty sure it will be very bad once fully developed (even reaching a quarter of the State of the Art sounds reasonably unattainable).
+Modulus is not indented to be an efficient nor complete solver. It is designed to be an educative project and I'm pretty sure it will be very bad once fully developed (even reaching a quarter of the State of the Art would be a dead end).
 
 ## Following the development process
 
