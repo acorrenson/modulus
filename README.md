@@ -1,6 +1,8 @@
 # modulus
 
-Building An SMT solver from the ground up
+![modulus-logo](img/modulus-logo/modulus-logo.001.png)
+
+Building an SMT solver from the ground up
 
 ## Introduction
 
