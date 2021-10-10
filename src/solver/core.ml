@@ -23,6 +23,9 @@ let dpllt f =
   solve_all cnf
   |> map (call_theory lia)
   |> find_first_sat
+  |> function
+  | SAT m as res -> assert (check f m = Some true); res
+  | _ as res -> res
 
 let answer_to_string = function
   | SAT _ -> "sat"
