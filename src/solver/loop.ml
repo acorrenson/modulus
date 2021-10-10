@@ -12,7 +12,7 @@ type context = {
   state : smt_state;
   stack : formula list;
   logic : Scripts.smt_logic;
-  model : Qf_lia.anwser;
+  model : Model.anwser;
 }
 
 let do_assert ctx f =

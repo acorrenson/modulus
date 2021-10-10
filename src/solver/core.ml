@@ -1,5 +1,6 @@
 open Sat
 open Logic
+open Model
 open Lstream
 open Qf_lia
 
