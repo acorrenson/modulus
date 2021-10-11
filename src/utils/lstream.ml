@@ -27,3 +27,5 @@ let of_string (s : string) =
 let of_list (l : 'a list) =
   l |> Stream.of_list |> of_stream
 
+let of_channel (i : in_channel) =
+  of_stream (Stream.of_channel i)

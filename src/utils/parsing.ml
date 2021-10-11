@@ -42,3 +42,19 @@ let option default x = x <|> return default
 let rec many p = option [] (p >>= fun r -> many p >>= fun rs -> return (r :: rs))
 
 let many1 p = p <~> many p
+
+let char (c : char) = satisfy ((=) c)
+
+let digit = satisfy (function '0'..'9' -> true | _ -> false)
+
+let implode x = String.concat "" @@ List.map (String.make 1) x
+
+let number = many1 digit => implode => int_of_string
+
+let alpha =
+  satisfy (function 'a'..'z' | 'A'..'Z' -> true | _ -> false)
+
+let spaces =
+  many (satisfy (function '\n' | '\t' | ' ' -> true | _ -> false))
+
+let (let*) = (>>=)
