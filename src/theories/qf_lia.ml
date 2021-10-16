@@ -11,13 +11,15 @@ open Model
 module Interval = struct
   type t = { lo : int; hi : int }
 
+  let sum_overflow x y =
+    if y > 0 then x + y <= x
+    else x + y > x
+
   let _add_int x y =
-    if x / 2 + y / 2 > max_int / 2 then
-      max_int
-    else if x / 2 + y / 2 < min_int / 2 then 
-      min_int
-    else
-      x + y
+    if sum_overflow x y then
+      if x > 0 then max_int
+      else min_int
+    else x + y
 
   let add (i1 : t) (i2 : t) : t =
     { lo = _add_int i1.lo i2.lo; hi = _add_int i1.hi i2.hi }
@@ -37,14 +39,11 @@ module Interval = struct
   let singleton (x : int) : t = { lo = x; hi = x}
 
   let mid x y =
-    if x land 1 = y land 1 then
-      if x land 1 = 0 then
-        (x / 2 + y / 2, x / 2 + y / 2)
-      else
-        (x / 2 + y / 2, x / 2 + y / 2 + 1)
-    else (x / 2 + y / 2, x / 2 + y / 2)
+    let m = x / 2 + y / 2 in
+    (m, m + (x land 1) * (y land 1))
 
   let split ({lo; hi} : t) =
+    Printf.printf "split on [%d %d]\n" lo hi;
     if lo + 1 = hi then
       `Pair (singleton lo, singleton hi)
     else if lo = hi then
@@ -73,7 +72,8 @@ module Solver = struct
       else
         let d = Interval.inter x x' in
         if Interval.is_empty d then
-          Fail "update failed"
+          let open Interval in
+          Fail (Printf.sprintf "update failed [%d %d] . [%d %d] = [%d %d]" x.lo x.hi x'.lo x'.hi d.lo d.hi)
         else Update ((t, d)::List.remove_assoc t s, d)
     | None ->
       Update ((t, x)::s, x)
@@ -116,7 +116,20 @@ module Solver = struct
 
   let leak : state update = fun s -> Value s
 
-  let fail msg = fun _ -> Fail msg
+  let print_state =
+    let open Interval in
+    List.iter (fun (x, {lo; hi}) ->
+      match x with
+      | Var x ->
+        Printf.printf "%s := [%d, %d]\n" x lo hi
+      | _ -> ()
+    )
+
+  let fail msg = fun s ->
+    Printf.printf "failed in ctx :\n\t";
+    print_state s;
+    Printf.printf "with message : %s\n" msg;
+    Fail msg
 
   let propagate_one (Eq (t1, t2) : atom) : unit update =
     let* d1 = eval t1 in
@@ -142,22 +155,16 @@ module Solver = struct
   let sequence (l : 'a list) (p : 'a -> unit update) : unit update =
     List.fold_left (>>) (return ()) (List.map p l)
 
-  let print_state =
-    let open Interval in
-    List.iter (fun (x, {lo; hi}) ->
-      match x with
-      | Var x ->
-        Printf.printf "%s := [%d, %d]\n" x lo hi
-      | _ -> ()
-    )
+  let propagate l : unit update =
+    sequence l propagate_one
+    >> sequence l propagate_one_backward
 
-  let propagate l : unit update = fun s -> sequence l propagate_one s
-
-  let try_or (u1 : 'a update) (u2 : 'b update) : 'b update = fun s ->
+  let (<|>) (u1 : 'a update) (u2 : 'b update) : 'b update = fun s ->
     match u1 s with
-    | Fail _ -> u2 s
+    | Fail _ ->
+      Printf.printf "fallback...\n";
+      u2 s
     | _ as r -> r
-
 
   let extract_model (p : atom list) =
     let vars =
@@ -167,6 +174,7 @@ module Solver = struct
         |> List.of_seq
     in
     let rec step vlist (model : Model.t) : Model.t update =
+      Printf.printf "step in context: %s.\n" (String.concat " " vlist);
       match vlist with
       | [] ->
         if List.for_all (fun a -> Option.get (check_atom a model)) p
@@ -176,10 +184,11 @@ module Solver = struct
         let* dx = eval (Var x) in
         match Interval.split dx with
         | `Pair (d1, d2) ->
-          try_or
-            (update (Var x) d1 >> propagate p >> step vlist model)
-            (update (Var x) d2 >> propagate p >> step vlist model)
-        | `Single v -> step xs ((x, v)::model)
+          (update (Var x) d1 >> propagate p >> step vlist model)
+          <|>
+          (update (Var x) d2 >> propagate p >> step vlist model)
+        | `Single v ->
+          step xs ((x, v)::model)
       in
       step vars []
   
@@ -225,8 +234,10 @@ let rec lia_indep (l : atom list) : anwser =
 let lia (l : atom list) : anwser =
   try SAT (Solver.solve l)
   with
-  | Solver.UpdateFail _ -> UNSAT
-  | _ -> if are_independants l then lia_indep l else UNKNOWN
+  | Solver.UpdateFail _msg ->
+    Printf.printf "unsat because : %s\n" _msg;
+    UNSAT
+  | _ -> UNKNOWN
 
 let is_sat = function SAT _ -> true | _ -> false
 
