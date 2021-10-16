@@ -61,7 +61,7 @@ let do_check_sat ctx =
     let unknown () =
       Printf.eprintf "unknown\n"; { ctx with state = Sat_mode } in
     match ctx.stack with
-    | [] -> sat (SAT (fun _ -> None))
+    | [] -> sat (SAT [])
     | l::ls ->
       let f = List.fold_left (fun acc f -> And (acc, f)) l ls in
       match dpllt f with
@@ -76,7 +76,7 @@ let do_get_model ctx =
     VSet.iter (fun x ->
       match ctx.model with
       | SAT m ->
-        Printf.eprintf "(%s %d)\n" x (Option.get (m x))
+        Printf.eprintf "(%s %d)\n" x (Option.get (List.assoc_opt x m))
       | UNKNOWN -> ()
       | UNSAT -> assert false
     ) vars;
