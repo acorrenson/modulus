@@ -1,5 +1,6 @@
 (set-logic ALL)
 (declare-const x Int)
-(assert (= (+ x x) 201))
+(declare-const y Int)
+(assert (= (+ x y) 202))
 (check-sat)
 (get-model)
