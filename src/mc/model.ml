@@ -4,7 +4,9 @@ type value = int
 
 type t = (string * value) list
 
-type anwser = SAT of t | UNSAT | UNKNOWN
+type answer = SAT of t | UNSAT | UNKNOWN
+
+let is_sat = function SAT _ -> true | _ -> false
 
 let (let*) = Option.bind
 

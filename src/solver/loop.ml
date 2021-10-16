@@ -12,8 +12,14 @@ type context = {
   state : smt_state;
   stack : formula list;
   logic : Scripts.smt_logic;
-  model : Model.anwser;
+  model : Model.answer;
 }
+
+let _verbose = ref false
+
+let sucess () =
+  if !_verbose then
+    Printf.eprintf "sucess\n"
 
 let do_assert ctx f =
   match ctx.state with
@@ -22,7 +28,7 @@ let do_assert ctx f =
   | _ ->
     try
       Scripts.type_check_formula f ctx.tenv;
-      Printf.eprintf "success\n";
+      sucess ();
       { ctx with stack = (f::ctx.stack); state = Assert_mode }
     with
       | Scripts.VarDup x ->
@@ -33,7 +39,7 @@ let do_assert ctx f =
 let do_set_logic ctx l =
   match ctx.state with
   | Start_mode -> 
-    Printf.eprintf "success\n";
+    sucess ();
     { ctx with logic = l; state = Assert_mode }
   | _ ->
     Printf.eprintf "(error \"logic can\'t be set now\")\n"; ctx
@@ -46,7 +52,7 @@ let do_declare_const ctx x t =
     match Hashtbl.find_opt ctx.tenv x with
     | Some _ -> raise (Scripts.VarDup x)
     | None ->
-      Printf.eprintf "success\n";
+      sucess ();
       Hashtbl.add ctx.tenv x t; ctx
 
 let do_check_sat ctx =

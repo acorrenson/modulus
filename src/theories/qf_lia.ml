@@ -93,51 +93,6 @@ module Interval2 = struct
       | OpenL v | OpenR v -> v
 end
 
-(* module Interval = struct
-  type t = { lo : int; hi : int }
-
-  let sum_overflow x y =
-    if y > 0 then x + y <= x
-    else x + y > x
-
-  let _add_int x y =
-    if sum_overflow x y then
-      if x > 0 then max_int
-      else min_int
-    else x + y
-
-  let add (i1 : t) (i2 : t) : t =
-    { lo = _add_int i1.lo i2.lo; hi = _add_int i1.hi i2.hi }
-
-  let sub (i1 : t) (i2 : t) : t =
-    { lo = _add_int i1.lo (-i2.hi); hi = _add_int i1.hi (-i2.lo) }
-
-  let add_inv (i1 : t) (i2 : t) (res : t) = (sub res i2, sub res i1)
-  
-  let inter (i1 : t) (i2 : t) : t =
-    { lo = max i1.lo i2.lo; hi = min i1.hi i2.hi }
-  
-  let is_empty ({ lo; hi }) : bool = lo > hi
-
-  let top : t = { lo = min_int; hi = max_int }
-
-  let singleton (x : int) : t = { lo = x; hi = x}
-
-  let mid x y =
-    let m = x / 2 + y / 2 in
-    (m, m + (x land 1) * (y land 1))
-
-  let split ({lo; hi} : t) =
-    Printf.printf "split on [%d %d]\n" lo hi;
-    if lo + 1 = hi then
-      `Pair (singleton lo, singleton hi)
-    else if lo = hi then
-      `Single lo
-    else
-      let (m, m') = mid lo hi in
-      `Pair ({ lo; hi = m }, { lo = m'; hi })
-end *)
-
 module Solver = struct
   type state = (term * Interval2.t) list
 
@@ -145,6 +100,7 @@ module Solver = struct
     | Value of 'a
     | Update of state * 'a
     | Fail of string
+    | Abort
 
   type 'a update = state -> 'a status
 
@@ -164,16 +120,19 @@ module Solver = struct
     | None ->
       Update ((t, x)::s, x)
 
-  exception UpdateFail of string
+  exception Contradiction of string
+  exception Aborted
 
   let get (s : 'a status) : 'a =
     match s with
-    | Fail l -> raise (UpdateFail ("nothing to get because: " ^ l))
+    | Abort -> raise Aborted
+    | Fail l -> raise (Contradiction ("nothing to get because: " ^ l))
     | Value v -> v
     | Update (_, v) -> v
 
   let (let*) (m : 'a update) (f : 'a -> 'b update) : 'b update = fun s ->
     match m s with
+    | Abort -> Abort
     | Fail _ as err -> err
     | Value v -> f v s
     | Update (e, v) ->
@@ -194,8 +153,6 @@ module Solver = struct
           let* v2 = eval t2 in
           update x (Interval2.add v1 v2)
         end s
-
-  exception Contradiction of string
 
   let (>>) (u1 : 'a update) (u2 : 'b update) : 'b update =
     let* _ = u1 in u2
@@ -244,20 +201,14 @@ module Solver = struct
   let (<|>) (u1 : 'a update) (u2 : 'b update) : 'b update = fun s ->
     match u1 s with
     | Fail _ ->
-      Printf.printf "fallback...\n";
+      (* Printf.printf "fallback...\n"; *)
       u2 s
     | _ as r -> r
 
-
-  (* let last_effort (p : atom list) =
-    let vars =
-      List.map avars p
-      |> List.fold_left VSet.union VSet.empty
-      |> VSet.to_seq
-      |> List.of_seq
-    in
-    let rec step  *)
-
+  let rec zseq x =
+    Lstream.Cons (x, lazy (zseq (x + 1)))
+  and zseq' x =
+    Lstream.Cons (x, lazy (zseq' (x - 1)))
 
   let extract_model (p : atom list) =
     let vars =
@@ -295,47 +246,13 @@ module Solver = struct
     get (go [])
 end
 
-(**
-  Solve a single arithmetic goal
-*)
-let lia1 (a : atom) : anwser =
-  match a with
-  | Eq (Var x, Var y) -> SAT [x, 0; y, 0]
-  | Eq (Cst x, Cst y) ->
-    if x = y then SAT [] else UNSAT
-  | Eq (Var x, Cst a)
-  | Eq (Cst a, Var x) -> SAT [x, a]
-  | _ -> UNKNOWN
-
-let debug m x = match m x with Some x -> string_of_int x | _ -> "?"
-
-(**
-  Solve a list of arithmetic goals under the hypothesis
-  that goals are independants (don't share variables)
-*)
-let rec lia_indep (l : atom list) : anwser =
-  match l with
-  | [] -> SAT []
-  | eq::eqs ->
-    match lia1 eq with
-    | SAT m ->
-      begin match lia_indep eqs with
-      | SAT m' -> SAT (m @ m')
-      | _ as r -> r
-      end
-    | UNSAT -> UNSAT
-    | UNKNOWN ->
-      match lia_indep eqs with
-      | SAT _ -> UNKNOWN
-      | _ as r -> r
-
-let lia (l : atom list) : anwser =
+let lia (l : atom list) : answer =
   try SAT (Solver.solve l)
   with
-  | Solver.UpdateFail _msg ->
-    Printf.printf "unsat because : %s\n" _msg;
+  | Solver.Contradiction _msg ->
+    (* Printf.printf "unsat because : %s\n" _msg; *)
     UNSAT
   | _ -> UNKNOWN
 
-let is_sat = function SAT _ -> true | _ -> false
+
 
