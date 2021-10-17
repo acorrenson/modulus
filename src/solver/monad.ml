@@ -252,7 +252,7 @@ let generic_solver (p : atom list) =
 let solve (p : atom list) =
   let go = propagate p >> extract_model p in
   try Model.SAT (get (go []))
-  with 
+  with
   | Aborted -> Model.UNKNOWN
   | Contradiction _ -> Model.UNSAT
 

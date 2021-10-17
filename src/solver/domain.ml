@@ -33,6 +33,7 @@ type t =
 let normalize x y =
   if x = A.bot || y = B.bot then Bot
   else Pair (x, y)
+
 let bot = Bot
 let top = Pair (A.top, B.top)
 
