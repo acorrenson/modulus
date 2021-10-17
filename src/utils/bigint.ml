@@ -34,6 +34,12 @@ let equal a b = match a,b with
 | (Positive a, Positive b) | (Negative a, Negative b) -> Biguint.EqBU.equal a b
 | _ -> false
 
+let cmp a b = match a,b with
+| (Positive a, Positive b) -> Biguint.cmp a b
+| (Negative a, Negative b) -> Biguint.cmp b a
+| (Positive _, Negative _) -> Higher
+| (Negative _, Positive _) -> Lesser
+
 let rec add a b = match a,b with
 | (Positive a, Positive b) -> Positive (Biguint.add a b)
 | (Positive _, Negative b) -> sub a (Positive b)
@@ -58,18 +64,3 @@ let div a b = match a,b with
 let neg = function
 | Positive a -> Negative a
 | Negative a -> Positive a
-
-module EqBI = Eq.Make(struct
-  type t = bigint
-  let equal = equal
-end)
-
-module OrdBI = Ord.Make(struct
-  include EqBI
-
-  let cmp a b = match a,b with
-  | (Positive a, Positive b) -> Biguint.cmp a b
-  | (Negative a, Negative b) -> Biguint.cmp b a
-  | (Positive _, Negative _) -> Higher
-  | (Negative _, Positive _) -> Lesser
-end)

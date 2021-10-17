@@ -49,7 +49,7 @@ let digit = satisfy (function '0'..'9' -> true | _ -> false)
 
 let implode x = String.concat "" @@ List.map (String.make 1) x
 
-let number = many1 digit => implode => int_of_string
+let number = many1 digit => implode
 
 let alpha =
   satisfy (function 'a'..'z' | 'A'..'Z' -> true | _ -> false)

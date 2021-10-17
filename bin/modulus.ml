@@ -1,4 +1,4 @@
-open Modulus_lib.Loop
+open Modulus_lib.Loop.Make(Modulus_lib.Bigint)
 
 let () =
   if Array.length Sys.argv > 1 then

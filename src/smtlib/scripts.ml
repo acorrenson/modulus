@@ -1,5 +1,6 @@
-open Logic
-open Sexp
+module Make(N: Logic.LIA_NUM) = struct
+  open Logic.Make(N)
+  open Sexp.Make(N)
 
 type smt_logic =
   | ALL
@@ -100,3 +101,4 @@ let type_check_command (c : command) (e : typing_env) =
 let type_check s =
   let e : typing_env = Hashtbl.create 10 in
   List.iter (fun c -> type_check_command c e) s
+end
