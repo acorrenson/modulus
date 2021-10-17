@@ -1,21 +1,12 @@
 open Sat
 
-module type LIA_NUM = sig
-  include Ord.ORD
-  include Num.NUM with type t := t
-  include Read.READ with type t := t
-  include Show.SHOW with type t := t
-end
-
-module Make(N: LIA_NUM) = struct
-
 type ttype =
   | Int
   | Bool
 
 type term =
   | Var of string
-  | Cst of N.t
+  | Cst of Bigint.t
   | Add of term * term
 
 type atom =
@@ -114,4 +105,3 @@ let to_cnf (form : formula) : cnf * vmap =
       if s then [[i]] else [[-i]]
   in
   to_cnf_aux (cnf_pass_neg true form), h
-end

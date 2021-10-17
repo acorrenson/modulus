@@ -1,10 +1,9 @@
-module Make(N: Read.READ) = struct
   open Lstream
   open Parsing
 
   type sexp =
     | Sym of string
-    | Int of N.t
+    | Int of Bigint.t
     | Cons of sexp list
 
   let ident =
@@ -24,7 +23,7 @@ module Make(N: Read.READ) = struct
 
   let num =
     spaces >>
-      number => (fun x -> Int (N.of_string x))
+      number => (fun x -> Int (Bigint.of_string x))
     << spaces
 
   let atom = ident <|> num <|> operator
@@ -46,4 +45,3 @@ module Make(N: Read.READ) = struct
     open_in f
     |> of_channel
     |> many1 parse_sexp
-end

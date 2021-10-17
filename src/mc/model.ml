@@ -1,52 +1,47 @@
 open Logic
+open Num.Make(Bigint)
 
-module Make(N: LIA_NUM) = struct
-  include Logic.Make(N)
-  open Num.Make(N)
-  
+type value = Bigint.t
 
-  type value = N.t
+type t = string -> value option
 
-  type t = string -> value option
+type anwser = SAT of t | UNSAT | UNKNOWN
 
-  type anwser = SAT of t | UNSAT | UNKNOWN
+let (let*) = Option.bind
 
-  let (let*) = Option.bind
+let rec eval_term (t : term) (e : t) : value option =
+  match t with
+  | Cst i -> Some i
+  | Var x -> e x
+  | Add (t1, t2) ->
+    let* v1 = eval_term t1 e in
+    let* v2 = eval_term t2 e in
+    Some (v1 + v2)
 
-  let rec eval_term (t : term) (e : t) : value option =
-    match t with
-    | Cst i -> Some i
-    | Var x -> e x
-    | Add (t1, t2) ->
-      let* v1 = eval_term t1 e in
-      let* v2 = eval_term t2 e in
-      Some (v1 + v2)
+let check_atom (atm : atom) (e : t) : bool option =
+  match atm with
+  | Eq (t1, t2) ->
+    let* v1 = eval_term t1 e in
+    let* v2 = eval_term t2 e in
+    Some (v1 = v2)
 
-  let check_atom (atm : atom) (e : t) : bool option =
-    match atm with
-    | Eq (t1, t2) ->
-      let* v1 = eval_term t1 e in
-      let* v2 = eval_term t2 e in
-      Some (v1 = v2)
+let rec check (f : formula) (e : t) : bool option =
+  match f with
+  | Atom a -> check_atom a e
+  | Or (f1, f2) ->
+    let* c1 = check f1 e in
+    let* c2 = check f2 e in
+    Some (c1 || c2)
+  | And (f1, f2) ->
+    let* c1 = check f1 e in
+    let* c2 = check f2 e in
+    Some (c1 && c2)
+  | Neg f ->
+    let* c = check f e in
+    Some (not c)
 
-  let rec check (f : formula) (e : t) : bool option =
-    match f with
-    | Atom a -> check_atom a e
-    | Or (f1, f2) ->
-      let* c1 = check f1 e in
-      let* c2 = check f2 e in
-      Some (c1 || c2)
-    | And (f1, f2) ->
-      let* c1 = check f1 e in
-      let* c2 = check f2 e in
-      Some (c1 && c2)
-    | Neg f ->
-      let* c = check f e in
-      Some (not c)
+let update_model (m : t) (x : string) (v : value) =
+  fun y -> if y = x then Some v else m y
 
-  let update_model (m : t) (x : string) (v : value) =
-    fun y -> if y = x then Some v else m y
-
-  let merge_model (m : t) (m' : t) =
-    fun x -> match m x with Some _ as v -> v | None -> m' x
-end
+let merge_model (m : t) (m' : t) =
+  fun x -> match m x with Some _ as v -> v | None -> m' x

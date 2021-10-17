@@ -1,5 +1,5 @@
-open Modulus_lib.Loop.Make(Modulus_lib.Bigint)
-open Modulus_lib.Qf_lia.Make(Modulus_lib.Bigint)
+open Modulus_lib.Loop
+open Modulus_lib.Qf_lia
 
 let test_file sat f =
   let ctx = batch f in
