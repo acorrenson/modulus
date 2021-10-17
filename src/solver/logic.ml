@@ -30,6 +30,12 @@ let avars (a : atom) : VSet.t =
   match a with
   | Eq (t1, t2) -> VSet.union (tvars t1) (tvars t2)
 
+let lvars (l : atom list) =
+    List.map avars l
+    |> List.fold_left VSet.union VSet.empty
+    |> VSet.to_seq
+    |> List.of_seq
+
 let rec vars (f : formula) : VSet.t =
   match f with
   | Or (f1, f2) -> VSet.union (vars f1) (vars f2)

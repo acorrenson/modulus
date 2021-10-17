@@ -108,7 +108,7 @@ let exec_one ctx sxp =
 
 let batch f =
   match Sexp.of_file f with
-  | Some (sxp, Lstream.Nil) ->
+  | Some (sxp, rem) when (Lazy.force rem = Nil) ->
     List.fold_left exec_one {
       tenv = Hashtbl.create 50;
       state = Start_mode;

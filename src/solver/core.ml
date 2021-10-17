@@ -5,13 +5,14 @@ open Lstream
 open Qf_lia
 
 let find_first_sat l =
-  let rec step all_unknown = function 
+  let rec step all_unknown l =
+    match Lazy.force l with
     | Nil -> if all_unknown then UNKNOWN else UNSAT
     | Cons (x, xs) ->
       begin match x with
       | SAT _ -> x
-      | UNSAT -> step false (Lazy.force xs)
-      | UNKNOWN -> step all_unknown (Lazy.force xs)
+      | UNSAT -> step false xs
+      | UNKNOWN -> step all_unknown xs
       end
   in step true l
 

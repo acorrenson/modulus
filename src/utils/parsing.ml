@@ -1,8 +1,8 @@
 open Lstream
 
-type ('i, 'o) presult = ('o * 'i lstream) option
+type ('i, 'o) presult = ('o * 'i t) option
 
-type ('i, 'o) parser = 'i lstream -> ('i, 'o) presult
+type ('i, 'o) parser = 'i t -> ('i, 'o) presult
 
 let zero _ = None
 
@@ -13,9 +13,10 @@ let (>>=) p fp = fun i ->
   | None -> None
   | Some (o, i') -> fp o i'
 
-let any : ('a, 'a) parser = function
+let any : ('a, 'a) parser = fun inp ->
+  match Lazy.force inp with
   | Nil -> None
-  | Cons (x, i) -> Some (x, Lazy.force i)
+  | Cons (x, i) -> Some (x, i)
 
 let satisfy test =
   any >>= (fun res -> if test res then return res else zero)
