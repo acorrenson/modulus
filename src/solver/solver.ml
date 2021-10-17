@@ -30,7 +30,7 @@ end
 exception Contradiction of string
 exception Aborted
 
-module Solver (D : Domain) : sig
+module Make (D : Domain) : sig
   type state = (term * D.t) list
   (** Internal state of the solver *)
 

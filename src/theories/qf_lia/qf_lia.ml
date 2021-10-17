@@ -99,7 +99,4 @@ let peek = function
 
 end
 
-module QfLia = Monad.Solver (Interval)
-
-
-
+module QfLia = Solver.Make (Interval)
