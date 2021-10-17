@@ -2,16 +2,18 @@ open Logic
 
 type value = int
 
-type t = string -> value option
+type t = (string * value) list
 
-type anwser = SAT of t | UNSAT | UNKNOWN
+type answer = SAT of t | UNSAT | UNKNOWN
+
+let is_sat = function SAT _ -> true | _ -> false
 
 let (let*) = Option.bind
 
 let rec eval_term (t : term) (e : t) : value option =
   match t with
   | Cst i -> Some i
-  | Var x -> e x
+  | Var x -> List.assoc_opt x e
   | Add (t1, t2) ->
     let* v1 = eval_term t1 e in
     let* v2 = eval_term t2 e in
@@ -40,7 +42,4 @@ let rec check (f : formula) (e : t) : bool option =
     Some (not c)
 
 let update_model (m : t) (x : string) (v : value) =
-  fun y -> if y = x then Some v else m y
-
-let merge_model (m : t) (m' : t) =
-  fun x -> match m x with Some _ as v -> v | None -> m' x
+  (x, v)::List.remove_assoc x m
