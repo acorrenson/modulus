@@ -13,3 +13,9 @@ module Make(M: MONAD) = struct
   let (>>) a b = a >>= Fun.const b
   let (let*) = bind
 end
+
+module type MONADFIX = sig
+  include MONAD
+
+  val mfix : ('a lazy_t -> 'a t) -> 'a t
+end

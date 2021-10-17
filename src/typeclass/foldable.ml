@@ -10,7 +10,7 @@ module FoldMonoid(F: FOLDABLE)(M: MONOID) = struct
   type t = M.t F.t
   open M
 
-  let fold_map f = F.fold_right (fun a -> (<>) (f a)) zero
+  let fold_map f = F.fold_right (fun a -> (++) (f a)) zero
 end
 
 module Make(F: FOLDABLE) = struct
