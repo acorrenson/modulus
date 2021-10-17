@@ -30,6 +30,12 @@ end
 exception Contradiction of string
 exception Aborted
 
+module type SOLVER_INTEGER = sig
+include Num.INTEGER
+include Read.READ with type t := t
+include Show.SHOW with type t := t
+end
+
 module Make (D : Domain) : sig
   type state = (term * D.t) list
   (** Internal state of the solver *)
@@ -116,7 +122,6 @@ module Make (D : Domain) : sig
     Ready to be used version of [generic_solver].
   *)
 end = struct
-
 type state = (term * D.t) list
 
 type 'a status =

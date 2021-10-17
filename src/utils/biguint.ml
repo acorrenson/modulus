@@ -58,23 +58,24 @@ let add a b =
   Lstream.fold_left (fun (vals, overflow) (xa, xb) -> let s = xa + xb + overflow in (vals @ [s], overflow/10)) ([], 0) (Lstream.zip (digits pa) (digits pb))
   |> Lazy.force
   |> (fun (vals, _) -> of_digits (Lstream.of_list vals))
+  (* |> (fun i -> Printf.printf "[Biguint] add (pa=%s, pb=%s) -> %s\n" (to_string pa) (to_string pb) (to_string i); i) *)
 
 let sub a b =
-  let module BIO = Ord.Make(struct type t = biguint let cmp = cmp let equal a b = cmp a b |> Ord.Cmp.is_eq end) in
-  if BIO.lt a b then failwith "biguint underflow"
+  let lt a b = cmp a b |> Ord.Cmp.is_lt in
+  if lt a b then failwith (Printf.sprintf "biguint sub underflow (lhs=%s, rhs=%s)" (to_string a) (to_string b))
   else
     let maxlen = max (Bytes.length a) (Bytes.length b) in
     let pa = pad maxlen a in
     let pb = pad maxlen b in
-    let f (vals, overflow) (a,b) =
-      let r = b + overflow in
-      if r > a
-        then (vals @ [10 + r - a], -1)
-        else (vals @ [r-a], 0)
+    let f (a, b) (vals, carry) = let r = (-10) * carry + a - b in if r < 0 then (10 + r :: vals, 1) else (r :: vals, 0)
     in
-    Lstream.fold_left f ([], 0) (Lstream.zip (digits pa) (digits pb))
-    |> Lazy.force
-    |> (fun (vals, _) -> of_digits (Lstream.of_list vals))
+    Lstream.FoldableLS.fold_right f ([], 0) (Lstream.zip (digits pa) (digits pb))
+    |> (fun (vals, carry) -> of_digits (Lstream.of_list (carry :: vals)))
+    |> normalize
+    (* |> (fun i -> Printf.printf "[Biguint] sub (pa=%s, pb=%s) -> %s\n" (to_string pa) (to_string pb) (to_string i); i) *)
+
+(* Biggest hack to make the calculations work - obviously not safe as it goes back to ints *)
+let (%) a i = Lstream.fold_left (fun res n -> (((to_int res) * 10 + n) mod (to_int i)) |> of_int) zero (digits a) |> Lazy.force
 
 module EqBU = Eq.Make(struct
   type t = biguint

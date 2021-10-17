@@ -82,7 +82,7 @@ let do_get_model ctx =
     VSet.iter (fun x ->
       match ctx.model with
       | SAT m ->
-        Printf.eprintf "(%s %s)\n" x (Option.get (m x) |> Bigint.to_string)
+        Printf.eprintf "(%s %s)\n" x (List.assoc x m |> Bigint.to_string)
       | UNKNOWN -> ()
       | UNSAT -> assert false
     ) vars;

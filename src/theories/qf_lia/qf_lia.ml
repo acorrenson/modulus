@@ -9,13 +9,12 @@
 open Domain
 
 module Interval : Domain = struct
-
 type t =
   | Top
   | Bot
-  | OpenL of int
-  | OpenR of int
-  | Intv of int * int
+  | OpenL of Bigint.t
+  | OpenR of Bigint.t
+  | Intv of Bigint.t * Bigint.t
 
 let top = Top
 
@@ -28,9 +27,9 @@ let singleton v = Intv (v, v)
 let to_string = function
   | Top -> "⊤"
   | Bot -> "⊥"
-  | OpenL v -> Printf.sprintf "]-∞; %d]" v
-  | OpenR v -> Printf.sprintf "[%d; +∞[" v
-  | Intv (lo, hi) -> Printf.sprintf "[%d; %d]" lo hi
+  | OpenL v -> Printf.sprintf "]-∞; %s]" (Bigint.to_string v)
+  | OpenR v -> Printf.sprintf "[%s; +∞[" (Bigint.to_string v)
+  | Intv (lo, hi) -> Printf.sprintf "[%s; %s]" (Bigint.to_string lo) (Bigint.to_string hi)
 
 let pp_print fmt x = Format.fprintf fmt "%s" (to_string x)
 
@@ -39,7 +38,7 @@ let normalize = function
   | _ as i -> i
 
 let add x y =
-  let r =
+  let r = let open Num.Make(Bigint) in 
     match x, y with
     | Bot, _ | _, Bot -> Bot
     | Top, _ | _, Top -> Top
@@ -67,32 +66,28 @@ let inter x y =
 let neg = function
   | Bot -> Bot
   | Top -> Top
-  | OpenL v -> OpenR (-v)
-  | OpenR v -> OpenL (-v)
-  | Intv (lo, hi) -> Intv (-hi, -lo)
+  | OpenL v -> OpenR (Bigint.neg v)
+  | OpenR v -> OpenL (Bigint.neg v)
+  | Intv (lo, hi) -> Intv (Bigint.neg hi, Bigint.neg lo)
 
 let sub x y = add x (neg y)
 
 let add_inv x y r = (sub r y, sub r x)
 
-let _mid x y =
-  let m = x / 2 + y / 2 in
-  (m, m + (x land 1) * (y land 1))
-
-let split = function
-  | Top -> Split (OpenL 0, OpenR 0)
+let split = let open Num.MakeInt(Bigint) in function
+  | Top -> Split (OpenL Bigint.zero, OpenR Bigint.zero)
   | Bot -> failwith "cannot split ⊥"
   | Intv (lo, hi) ->
     if lo = hi then Single lo else
-    let (m, m') = _mid lo hi in
+    let (m, m') = mid lo hi in
     Split (Intv (lo, m), Intv (m', hi))
   | OpenL v ->
-    Split (OpenL (v - 1), Intv (v, v))
+    Split (OpenL (v - one), Intv (v, v))
   | OpenR v ->
-    Split (Intv (v, v), OpenR (v + 1))
+    Split (Intv (v, v), OpenR (v + one))
 
 let peek = function
-  | Top -> 0
+  | Top -> Bigint.zero
   | Bot -> failwith "cannot peek a value in ⊥"
   | Intv (lo, _) -> lo
   | OpenL v | OpenR v -> v

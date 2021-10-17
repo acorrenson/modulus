@@ -15,17 +15,16 @@ module type Domain = sig
   val top : t
   val bot : t
   val inter : t -> t -> t
-  val singleton : int -> t
+  val singleton : Bigint.t -> t
   val is_empty : t -> bool
   val pp_print : Format.formatter -> t -> unit
   val add : t -> t -> t
   val add_inv : t -> t -> t -> (t * t)
-  val split : t -> (t , int) choice
-  val peek : t -> int
+  val split : t -> (t , Bigint.t) choice
+  val peek : t -> Bigint.t
 end
 
 module Combine (A : Domain) (B : Domain) : Domain = struct
-
 type t =
   | Bot
   | Pair of (A.t * B.t)
