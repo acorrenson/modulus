@@ -190,7 +190,6 @@ module Solver = struct
     let* d2 = eval t2 in
     step t1 d1 >> step t2 d2
 
-
   let sequence (l : 'a list) (p : 'a -> unit update) : unit update =
     List.fold_left (>>) (return ()) (List.map p l)
 
@@ -224,14 +223,15 @@ module Solver = struct
         then return model
         else fail "extract model"
       | x::xs ->
+        let open Interval2 in
         let* dx = eval (Var x) in
+        let decide x v = update (Var x) (singleton v) >> propagate p in
         match Interval2.split dx with
         | `Split (d1, d2) ->
-          let open Interval2 in
           let c1, c2 = peek d1, peek d2 in
-          (update (Var x) (singleton c1) >> propagate p >> (step xs ((x, c1)::model)))
+          (decide x c1 >> (step xs ((x, c1)::model)))
           <|>
-          (update (Var x) (singleton c2) >> propagate p >> (step xs ((x, c2)::model)))
+          (decide x c2 >> (step xs ((x, c2)::model)))
           <|>
           (update (Var x) d1 >> propagate p >> step vlist model)
           <|>
