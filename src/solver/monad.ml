@@ -1,17 +1,12 @@
+(**
+  This module provides utilities to define new resolution strategies.
+  We introduce a monad [Solver] to build customized solvers or generate
+  new ones given a domain (see {!Domain}).
+*)
+
 open Logic
 open Checker
-
-(**
-  This type represents a partition of a research space of type ['domain].
-  [Split (a, b)] modelize a partition of the space in 2 parts.
-  [Single v] is used when the space to be partitioned is 
-  already restricted to a single value of type ['value]
-*)
-type ('domain, 'value) choice =
-  | Split of 'domain * 'domain
-  | Single of 'value
-
-exception NoChoice
+open Domain
 
 (**
   !!! THIS MODULE IS A WORK IN PROGRESS !!!
@@ -30,20 +25,6 @@ exception NoChoice
 *)
 module type Evaluator = sig
   val eval : term -> Model.t -> int option
-end
-
-module type Domain = sig
-  type t
-  val top : t
-  val bot : t
-  val inter : t -> t -> t
-  val singleton : int -> t
-  val is_empty : t -> bool
-  val pp_print : Format.formatter -> t -> unit
-  val add : t -> t -> t
-  val add_inv : t -> t -> t -> (t * t)
-  val split : t -> (t , int) choice
-  val peek : t -> int
 end
 
 exception Contradiction of string
