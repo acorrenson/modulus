@@ -37,7 +37,7 @@ let cmp a b =
 let is_even a = last a = 0
 let is_odd = Fun.negate is_even
 
-let to_string = Bytes.to_string
+let to_string i = Bytes.map (fun i -> int_of_char i + int_of_char '0' |> char_of_int) i |> Bytes.to_string
 let of_string s = Bytes.of_string s |> Bytes.map (fun c -> int_of_char c - int_of_char '0' |> char_of_int)
 let to_int i = Lstream.fold_left (fun a b -> a * 10 + b) 0 (digits i) |> Lazy.force
 let of_int i = string_of_int i |> of_string

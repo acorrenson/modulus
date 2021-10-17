@@ -3,6 +3,7 @@ type t = bigint
 
 let to_string = function
 | Positive u -> Biguint.to_string u
+| Negative u when Biguint.is_zero u -> "0"
 | Negative u -> "-" ^ Biguint.to_string u
 
 let of_string s = if s.[0] = '-'
