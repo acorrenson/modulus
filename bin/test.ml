@@ -1,5 +1,5 @@
 open Modulus_lib.Loop
-open Modulus_lib.Qf_lia
+open Modulus_lib.Model
 
 let test_file sat f =
   let ctx = batch f in

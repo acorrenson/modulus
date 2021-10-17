@@ -20,9 +20,10 @@ type formula =
 
 module VSet = Set.Make (String)
 
-let tvars (t : term) : VSet.t =
+let rec tvars (t : term) : VSet.t =
   match t with
   | Var x -> VSet.singleton x
+  | Add (t1, t2) -> VSet.union (tvars t1) (tvars t2)
   | _ -> VSet.empty
 
 let avars (a : atom) : VSet.t =

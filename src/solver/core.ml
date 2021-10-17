@@ -21,7 +21,7 @@ let dpllt f =
     th (List.map (Hashtbl.find vmap) atms)
   in
   solve_all cnf
-  |> map (call_theory lia)
+  |> map (call_theory QfLia.solve)
   |> find_first_sat
   |> function
   | SAT m as res -> assert (check f m = Some true); res
