@@ -96,6 +96,6 @@ module NumBU = Num.Make(struct
   let one = one
   let add = add
   let sub = sub
-  let mul = failwith "Multiplication not implemented"
-  let div = failwith "Division not implemented"
+  let mul (_:t) = failwith "Multiplication not implemented"
+  let div (_:t) = failwith "Division not implemented"
 end)

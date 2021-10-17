@@ -35,8 +35,8 @@ let equal a b = match a,b with
 
 let rec add a b = match a,b with
 | (Positive a, Positive b) -> Positive (Biguint.add a b)
-| (Positive _, Negative _) -> sub a b
-| (Negative _, Positive _) -> sub b a
+| (Positive _, Negative b) -> sub a (Positive b)
+| (Negative a, Positive _) -> sub b (Positive a)
 | (Negative a, Negative b) -> Negative (Biguint.add a b)
 
 and sub a b = match a,b with
