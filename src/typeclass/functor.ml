@@ -4,8 +4,9 @@ module type FUNCTOR = sig
   val map : ('a -> 'b) -> 'a t -> 'b t
 end
 
-module Functor(F: FUNCTOR) = struct
+module Make(F: FUNCTOR) = struct
   include F
 
   let (<$>) = map
+  let (<$) a = map (Fun.const a)
 end

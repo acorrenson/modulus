@@ -1,12 +1,17 @@
 module type EQ = sig
   type t
-  val eq : t -> t -> bool
+  val equal : t -> t -> bool
 end
 
-module Eq(E: EQ) = struct
+module Make(E: EQ) = struct
   include E
-  let ne l = Fun.negate (eq l)
+  let ne l = Fun.negate (equal l)
 
-  let (==) = eq
+  let (==) = equal
   let (!=) = ne
 end
+
+module StructEq(T: sig type t end) = Make(struct
+  include T
+  let equal = (=)
+end)

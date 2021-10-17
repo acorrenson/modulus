@@ -10,7 +10,7 @@ module type NUM = sig
   val div : t -> t -> t
 end
 
-module Num(N : NUM) = struct
+module Make(N : NUM) = struct
   include N
   let incr = add one
   let decr = sub one
