@@ -154,6 +154,8 @@ let leak : state update = fun s -> Value s
 
 let fail msg = fun _ -> Fail msg
 
+let abort = fun _ -> Abort
+
 let (let*) (m : 'a update) (f : 'a -> 'b update) : 'b update = fun s ->
   match m s with
   | Abort         -> Abort
@@ -186,13 +188,22 @@ let (<|>) (u1 : 'a update) (u2 : 'b update) : 'b update = fun s ->
   | Fail _ -> u2 s
   | _ as r -> r
 
-let propagate_one (Eq (t1, t2) : atom) : unit update =
-  let* d1 = eval t1 in
-  let* d2 = eval t2 in
-  let d = D.inter d1 d2 in
-  update t1 d >> update t2 d >> return ()
+let propagate_one (a : atom) : unit update =
+  match a with
+  | Eq (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    let d = D.inter d1 d2 in
+    update t1 d >> update t2 d >> return ()
+  | Ne (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    if d1 = d2 then
+      update t1 D.bot >> update t2 D.bot >> return ()
+    else
+      return ()
 
-let propagate_one_backward (Eq (t1, t2) : atom) : unit update =
+let propagate_one_backward (a: atom) : unit update =
   let rec step (t : term) (dt : D.t) : unit update =
     match t with
     | Cst _ | Var _ -> update t dt >> return ()
@@ -202,9 +213,12 @@ let propagate_one_backward (Eq (t1, t2) : atom) : unit update =
       let (d1', d2') = D.add_inv d1 d2 dt in
       step t1 d1' >> step t2 d2' >> return ()
   in
-  let* d1 = eval t1 in
-  let* d2 = eval t2 in
-  step t1 d1 >> step t2 d2
+  match a with
+  | Eq (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    step t1 d1 >> step t2 d2
+  | Ne _ -> return ()
 
 let sequence (l : 'a list) (p : 'a -> unit update) : unit update =
   List.fold_left (>>) (return ()) (List.map p l)
@@ -213,19 +227,12 @@ let propagate l : unit update =
   sequence l propagate_one
   >> sequence l propagate_one_backward
 
-
-
 let extract_model (p : atom list) =
-  let vars =
-      List.map avars p
-      |> List.fold_left VSet.union VSet.empty
-      |> VSet.to_seq
-      |> List.of_seq
-  in
-  let rec step vlist (model : Model.t) : Model.t update =
+  let rec step depth vlist (model : Model.t) : Model.t update =
+    if depth <= 0 then abort else
     match vlist with
     | [] ->
-      if List.for_all (fun a -> Option.get (check_atom a model)) p
+      if check_list model p
       then return model
       else fail "extract model"
     | x::xs ->
@@ -234,17 +241,17 @@ let extract_model (p : atom list) =
       match D.split dx with
       | Split (d1, d2) ->
         let c1, c2 = D.peek d1, D.peek d2 in
-        (decide x c1 >> (step xs ((x, c1)::model)))
+        (decide x c1 >> (step (depth - 1) xs ((x, c1)::model)))
         <|>
-        (decide x c2 >> (step xs ((x, c2)::model)))
+        (decide x c2 >> (step (depth - 1) xs ((x, c2)::model)))
         <|>
-        (update (Var x) d1 >> propagate p >> step vlist model)
+        (update (Var x) d1 >> propagate p >> step (depth - 1) vlist model)
         <|>
-        (update (Var x) d2 >> propagate p >> step vlist model)
+        (update (Var x) d2 >> propagate p >> step (depth - 1) vlist model)
       | Single v ->
-        step xs ((x, v)::model)
+        step (depth - 1) xs ((x, v)::model)
     in
-    step vars []
+    step 512 (lvars p) []
 
 let generic_solver (p : atom list) =
   propagate p >> extract_model p

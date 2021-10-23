@@ -11,6 +11,7 @@ type term =
 
 type atom =
   | Eq of term * term
+  | Ne of term * term
 
 type formula =
   | Or of formula * formula
@@ -20,6 +21,11 @@ type formula =
 
 module VSet = Set.Make (String)
 
+let neg_atom (a : atom) =
+  match a with
+  | Eq (t1, t2) -> Ne (t1, t2)
+  | Ne (t1, t2) -> Eq (t1, t2)
+
 let rec tvars (t : term) : VSet.t =
   match t with
   | Var x -> VSet.singleton x
@@ -28,7 +34,13 @@ let rec tvars (t : term) : VSet.t =
 
 let avars (a : atom) : VSet.t =
   match a with
-  | Eq (t1, t2) -> VSet.union (tvars t1) (tvars t2)
+  | Eq (t1, t2) | Ne (t1, t2) -> VSet.union (tvars t1) (tvars t2)
+
+let lvars (l : atom list) =
+    List.map avars l
+    |> List.fold_left VSet.union VSet.empty
+    |> VSet.to_seq
+    |> List.of_seq
 
 let rec vars (f : formula) : VSet.t =
   match f with

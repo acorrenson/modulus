@@ -85,7 +85,7 @@ let rec type_check_formula (f : formula) (e : typing_env) =
   | And (f1, f2) -> type_check_formula f1 e; type_check_formula f2 e
   | Or (f1, f2) -> type_check_formula f1 e; type_check_formula f2 e
   | Neg f' -> type_check_formula f' e
-  | Atom (Eq (a, b)) -> type_check_term a e; type_check_term b e
+  | Atom (Eq (a, b) | Ne (a, b)) -> type_check_term a e; type_check_term b e
 
 let type_check_command (c : command) (e : typing_env) =
   match c with

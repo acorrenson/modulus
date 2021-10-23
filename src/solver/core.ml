@@ -5,20 +5,25 @@ open Lstream
 open Qf_lia
 
 let find_first_sat l =
-  let rec step all_unknown = function 
-    | Nil -> if all_unknown then UNKNOWN else UNSAT
+  let rec step all_unsat l =
+    match Lazy.force l with
+    | Nil -> if all_unsat then UNSAT else UNKNOWN
     | Cons (x, xs) ->
       begin match x with
       | SAT _ -> x
-      | UNSAT -> step false (Lazy.force xs)
-      | UNKNOWN -> step all_unknown (Lazy.force xs)
+      | UNSAT -> step all_unsat xs
+      | UNKNOWN -> step false xs
       end
   in step true l
 
 let dpllt f =
   let (cnf, vmap) = to_cnf f in
-  let call_theory th atms =
-    th (List.map (Hashtbl.find vmap) atms)
+  let call_theory th atom_ids =
+    let atoms = List.map (fun id ->
+      let a = Hashtbl.find vmap (abs id) in
+      if id < 0 then neg_atom a else a
+    ) atom_ids in
+    th atoms
   in
   solve_all cnf
   |> map (call_theory QfLia.solve)

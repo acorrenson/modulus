@@ -30,6 +30,8 @@ let rec solve (problem : cnf) =
       else Option.map (fun s -> -l::s) @@ solve @@ propagate (-l) (ls::cs)
 
 let rec solve_all (problem : cnf) =
-  match solve problem with
-  | None -> Lstream.Nil
-  | Some s -> Cons (s, lazy (solve_all (List.map Int.neg s::problem)))
+  lazy begin
+    match solve problem with
+    | None -> Lstream.Nil
+    | Some s -> Lstream.Cons (s, solve_all (List.map Int.neg s::problem))
+  end

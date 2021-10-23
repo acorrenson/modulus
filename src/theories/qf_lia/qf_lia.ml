@@ -99,4 +99,11 @@ let peek = function
 
 end
 
-module QfLia = Solver.Make (Interval)
+module QfLia = struct
+  module M = Solver.Make (Interval)
+  let solve p =
+    match M.solve p with
+    | Model.UNKNOWN ->
+      Last_effort.find_model p
+    | _ as r -> r 
+end
