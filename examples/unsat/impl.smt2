@@ -1,0 +1,5 @@
+(set-logic ALL)
+(declare-const x Int)
+(declare-const y Int)
+(assert (and (= x y) (not (= 1 1))))
+(check-sat)

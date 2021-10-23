@@ -25,6 +25,10 @@ let check_atom (atm : atom) (e : t) : bool option =
     let* v1 = eval_term t1 e in
     let* v2 = eval_term t2 e in
     Some (v1 = v2)
+  | Ne (t1, t2) ->
+      let* v1 = eval_term t1 e in
+      let* v2 = eval_term t2 e in
+      Some (v1 <> v2)
 
 let rec check (f : formula) (e : t) : bool option =
   match f with

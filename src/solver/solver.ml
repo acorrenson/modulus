@@ -188,13 +188,22 @@ let (<|>) (u1 : 'a update) (u2 : 'b update) : 'b update = fun s ->
   | Fail _ -> u2 s
   | _ as r -> r
 
-let propagate_one (Eq (t1, t2) : atom) : unit update =
-  let* d1 = eval t1 in
-  let* d2 = eval t2 in
-  let d = D.inter d1 d2 in
-  update t1 d >> update t2 d >> return ()
+let propagate_one (a : atom) : unit update =
+  match a with
+  | Eq (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    let d = D.inter d1 d2 in
+    update t1 d >> update t2 d >> return ()
+  | Ne (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    if d1 = d2 then
+      update t1 D.bot >> update t2 D.bot >> return ()
+    else
+      return ()
 
-let propagate_one_backward (Eq (t1, t2) : atom) : unit update =
+let propagate_one_backward (a: atom) : unit update =
   let rec step (t : term) (dt : D.t) : unit update =
     match t with
     | Cst _ | Var _ -> update t dt >> return ()
@@ -204,9 +213,12 @@ let propagate_one_backward (Eq (t1, t2) : atom) : unit update =
       let (d1', d2') = D.add_inv d1 d2 dt in
       step t1 d1' >> step t2 d2' >> return ()
   in
-  let* d1 = eval t1 in
-  let* d2 = eval t2 in
-  step t1 d1 >> step t2 d2
+  match a with
+  | Eq (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    step t1 d1 >> step t2 d2
+  | Ne _ -> return ()
 
 let sequence (l : 'a list) (p : 'a -> unit update) : unit update =
   List.fold_left (>>) (return ()) (List.map p l)
