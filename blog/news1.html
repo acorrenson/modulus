@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../index.css">
+  <title>Modulus</title>
+</head>
+
+<body>
+  <h1>Modulus (News)</h1>
+  <hr>
+  <p><i>Building an SMT solver from the ground up</i></p>
+  <a href="../index.html">acceuil</a>
+  <a href="./blog.html">blog</a>
+  <ul>
+    <li>Auteur : Arthur Correnson</li>
+    <li>Email : <a href="mailto:arthur.correnson@ens-rennes.fr">arthur.correnson@ens-rennes.fr</a></li>
+    <li>Date : 26/10/2021</li>
+  </ul>
+  <h2>Modulus évolue !</h2>
+  <p>
+    Cela fait une éternité que je n'ai pas publié de nouvelles sur l'avancée de modulus...
+    Pourtant, le développement avance plus que jamais. Voici un petit récapitulatif des nouveautés.
+  </p>
+  <h3>Solveur de contraintes et arithmétique entière</h3>
+  <p>
+    Jusqu'alors, Modulus était essentiellement un solveur SAT sur lequel est branché un très petit solveur
+    pour la théorie <b>QF_LIA</b>. A part des équations triviales du style <span class="math">x = x</span> on ne pouvait
+    pas aller bien loin. Ces derniers jours, j'ai donc travaillé à régler ce problème et j'ai intégré à Modulus un tout
+    nouveau solveur pour <b>QF_LIA</b>. Ce solveur utilise des techniques de programmations par contraintes et permet de
+    raisonner beaucoup plus finement sur des systèmes d'équations et d'inéquations dans les nombres entiers. Je
+    détaillerai son design dans un blog 😉.
+  </p>
+  <h3>Stratégie de dernier recours</h3>
+  <p>
+    Le nouveau solveur de théorie <b>QF_LIA</b>, bien que beaucoup plus puissant que l'ancien, n'est pas toujours
+    suffisant pour résoudre des problèmes difficiles. Pour éviter au maximum de rester bloqué sur problème que Modulus
+    ne saurait pas résoudre (c'est à dire beaucoup de problèmes 😂), j'ai également intégré une stratégie de derniers
+    recours. Cette stratégie appelée <i>Last Effort</i> dans le code source effectue une recherche force brute d'un
+    modèle. Si aucun modèle n'est trouvé après <span class="math">n</span> itérations, le solveur abandonne.
+    Cette stratégie est déclenchée uniquement dans le cas où le solveur pour <b>QF_LIA</b> est coincé.
+    Bien que très simple, cette stratégie permet en pratique de résoudre des nouveaux problèmes et permet de débloquer
+    le solveur en suggérant des instanciations ad-hoc des variables.
+  </p>
+  <h3>Production de modèle</h3>
+  <p>
+    La dernière nouveauté importante et l'ajout de la fonctionnalité
+  <pre>(get-model)</pre> du standard SMT-LIB. Cette commande permet de demander au solveur un modèle explicite dans le
+  cas où le problème donné en entrée est satisfiable.
+  </p>
+</body>
