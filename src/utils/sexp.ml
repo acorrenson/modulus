@@ -1,5 +1,6 @@
-open Lstream
-open Parsing
+open Minilib.Parsing
+open Minicat.Monad.Make(Minilib.Parsing)
+open Minicat.Alternative.Make(Minilib.Parsing)
 
 type sexp =
   | Sym of string
@@ -7,41 +8,28 @@ type sexp =
   | Cons of sexp list
 
 let ident =
-  spaces >>
-    many1 (alpha <|> char '-') => (fun x -> Sym (implode x))
-  << spaces
+  let open Fold(Minicat_ext.Seq_ext) in (* < provides [many1] over [Seq.t] *)
+  let+ sym = token (many1 (alpha <|> char '-')) in
+  Sym (String.of_seq sym)
 
 let operator =
-  spaces >> (
-    char '+'
-    <|> char '-'
-    <|> char '/'
-    <|> char '*'
-    <|> char '='
-    <|> char '%'
-  ) << spaces => (fun x -> Sym (String.make 1 x))
-
+  let op' = ['+';'-';'/';'*';'=';'%'] |> List.map char |> choice in
+  let+ op = token op' in
+  Sym (String.make 1 op)
 let num =
-  spaces >>
-    number => (fun x -> Int x)
-  << spaces
+  let open Fold(Minicat_ext.Seq_ext) in
+  let+ chars = many1 digit in
+  let num = String.of_seq chars |> int_of_string in 
+  Int num
 
 let atom = ident <|> num <|> operator
 
-let parens p =
-  spaces >> char '(' >> p << char ')' << spaces
+let parens p = surround (token (char '(')) (token (char ')')) p
 
-let rec parse_sexp i =
-  begin
-    atom
-    <|>
-    parens (many parse_sexp => (fun r -> Cons r))
-  end i
+let sexp =
+  let call sexp = let+ vals = many sexp in Cons vals in
+  fix (fun sexp -> parens (call sexp) <|> atom)
 
-let of_string s =
-  Lstream.of_string s |> many1 parse_sexp
+let of_string s = parse_string sexp s
 
-let of_file f =
-  open_in f
-  |> of_channel
-  |> many1 parse_sexp
+let of_file f = parse_file sexp f
