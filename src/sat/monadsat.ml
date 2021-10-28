@@ -22,6 +22,8 @@ val abort : ('env, 'res) t
 
 val update : ('env -> 'env) -> ('env, 'res) t
 
+val step : ('env -> ('env, 'res) t) -> ('env, 'res) t
+
 val set : 'env -> ('env, 'res) t
 
 val bind : ('env, 'res) t -> ('res -> ('env, 'res2) t) -> ('env, 'res2) t
@@ -82,7 +84,7 @@ let[@inline] (let+) m f = fast_bind m f
 
 let[@inline] (<|>) (m1 : ('env, 'res) t) (m2 : ('env, 'res) t) = fun (env : 'env) ->
   match m1 env with
-  | Fail _ -> m2 env
+  | Fail _ | Abort -> m2 env
   | _ as res -> res
 
 let[@inline] (<&>) (s1 : ('env, 'res) t) (s2 : ('env, 'res) t) : ('env, 'res) t = fun env ->
@@ -102,6 +104,8 @@ let strategy (step : ('env, 'res) t -> 'env -> ('env, 'res) t) : ('env, 'res) t 
     | Update env -> go env
     | _ as ret -> ret
   in go
+
+let step f = fun env -> f env env
 
 let run f e = match f e with Value v -> Some v | _ -> None
 end
@@ -123,7 +127,7 @@ type ('a, 'b) solver = ('a, 'b) t
 let solve : (cnf, int list) solver = strategy (fun next -> function
   | [] -> return []
   | []::_ -> fail "unsat"
-  | (l::_)::_ -> 
+  | (l::_)::_ ->
     (propagate l <&> next =>> add l)
     <|>
     (propagate (-l) <&> next =>> add (-l))

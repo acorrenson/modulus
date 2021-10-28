@@ -105,5 +105,89 @@ module QfLia = struct
     match M.solve p with
     | Model.UNKNOWN ->
       Last_effort.find_model p
-    | _ as r -> r 
+    | _ as r -> r
+end
+
+module MiniLia = struct
+open Monadsat.SolverMonad
+
+type env = { n : int; doms : (Logic.term * Interval.t) list; vlist : string list; model : Model.t }
+
+type res = Model.t
+
+type solver = (env, res) t
+
+let do_setv x d env = { env with doms = (x, d)::env.doms }, d
+let do_update x d env = { env with doms = (x, d)::(List.remove_assoc x env.doms) }
+let do_updatev x d env = do_update x d env, d
+
+let rec eval (x : Logic.term) = step (fun env ->
+  match List.assoc_opt x env.doms with
+  | Some v -> return v
+  | None ->
+    match x with
+    | Var _ ->
+      update (do_update x Interval.top)
+    | Cst v -> 
+      update (do_update x (Interval.singleton v))
+    | Add (t1, t2) ->
+      let* v1 = eval t1 in
+      let* v2 = eval t2 in
+      update (do_update x (Interval.add v1 v2))
+)
+
+let propagate_one (a : Logic.atom) =
+  match a with
+  | Logic.Eq (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    let d = Interval.inter d1 d2 in
+    update (do_update t1 d) <&> update (do_update t2 d) 
+  | Logic.Ne (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    if d1 = d2 then
+      update (do_update t2 (Interval.inter d1 d2))
+    else update (Fun.id)
+  
+let propagate (f : Logic.atom list) =
+  List.fold_left (<&>) (update (Fun.id)) (List.map propagate_one f)
+
+let decide v = update (fun env ->
+  let x = List.hd env.vlist in
+  let xs = List.tl env.vlist in
+  let dx = Interval.singleton v in
+  { env with doms = (Logic.Var x, dx)::List.remove_assoc (Logic.Var x) env.doms
+  ; model = (x, v)::env.model
+  ; vlist = xs
+  }
+)
+
+let choice = function
+  | [] -> assert false
+  | x::xs -> List.fold_left (<|>) x xs
+
+let extract_model (f : Logic.atom list) = strategy (fun next ({n; vlist; model; _} as env) ->
+  if n = 0 then abort
+  else let next = set {env with n = env.n - 1} <&> next in
+  match vlist with
+  | [] ->
+    if Checker.check_list model f then return model
+    else fail "extract model"
+  | x::_ ->
+    let* dx = eval (Var x) in
+    match Interval.split dx with
+    | Single v -> decide v <&> next
+    | Split (d1, d2) ->
+      let c1, c2 = Interval.peek d1, Interval.peek d2 in
+      choice [
+        decide c1 <&> next;
+        decide c2 <&> next;
+        update (do_update (Var x) d1) <&> propagate f <&> next;
+        update (do_update (Var x) d2) <&> propagate f <&> next
+      ])
+
+let generic_solver (p : Logic.atom list) =
+  propagate p <&> extract_model p
+
 end
