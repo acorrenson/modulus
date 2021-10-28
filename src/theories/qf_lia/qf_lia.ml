@@ -121,19 +121,27 @@ let do_setv x d env = { env with doms = (x, d)::env.doms }, d
 let do_update x d env = { env with doms = (x, d)::(List.remove_assoc x env.doms) }
 let do_updatev x d env = do_update x d env, d
 
+let update_dom x d =
+  if Interval.is_empty d then 
+    fail "unsat"
+  else
+    update (do_update x d)
+
+let update_dom_ret x d = update_dom x d <&> return d
+
 let rec eval (x : Logic.term) = step (fun env ->
   match List.assoc_opt x env.doms with
   | Some v -> return v
   | None ->
     match x with
     | Var _ ->
-      update (do_update x Interval.top)
+      update_dom_ret x Interval.top
     | Cst v -> 
-      update (do_update x (Interval.singleton v))
+      update_dom_ret x (Interval.singleton v)
     | Add (t1, t2) ->
       let* v1 = eval t1 in
       let* v2 = eval t2 in
-      update (do_update x (Interval.add v1 v2))
+      update_dom_ret x (Interval.add v1 v2)
 )
 
 let propagate_one (a : Logic.atom) =
@@ -142,12 +150,12 @@ let propagate_one (a : Logic.atom) =
     let* d1 = eval t1 in
     let* d2 = eval t2 in
     let d = Interval.inter d1 d2 in
-    update (do_update t1 d) <&> update (do_update t2 d) 
+    update_dom t1 d <&> update_dom t2 d
   | Logic.Ne (t1, t2) ->
     let* d1 = eval t1 in
     let* d2 = eval t2 in
     if d1 = d2 then
-      update (do_update t2 (Interval.inter d1 d2))
+      update_dom t2 (Interval.inter d1 d2)
     else update (Fun.id)
   
 let propagate (f : Logic.atom list) =
@@ -157,6 +165,7 @@ let decide v = update (fun env ->
   let x = List.hd env.vlist in
   let xs = List.tl env.vlist in
   let dx = Interval.singleton v in
+  Printf.printf "decide %s := %d\n" x v;
   { env with doms = (Logic.Var x, dx)::List.remove_assoc (Logic.Var x) env.doms
   ; model = (x, v)::env.model
   ; vlist = xs
@@ -167,9 +176,11 @@ let choice = function
   | [] -> assert false
   | x::xs -> List.fold_left (<|>) x xs
 
-let extract_model (f : Logic.atom list) = strategy (fun next ({n; vlist; model; _} as env) ->
+let decr = update (fun env -> { env with n = env.n - 1 })
+
+let extract_model (f : Logic.atom list) = strategy (fun next {n; vlist; model; _} ->
   if n = 0 then abort
-  else let next = set {env with n = env.n - 1} <&> next in
+  else let next = decr <&> next in
   match vlist with
   | [] ->
     if Checker.check_list model f then return model
@@ -186,8 +197,14 @@ let extract_model (f : Logic.atom list) = strategy (fun next ({n; vlist; model; 
         update (do_update (Var x) d1) <&> propagate f <&> next;
         update (do_update (Var x) d2) <&> propagate f <&> next
       ])
-
 let generic_solver (p : Logic.atom list) =
   propagate p <&> extract_model p
+
+let solve p =
+  let vlist = Logic.lvars p in
+  let doms = [] in
+  let n = 10 in
+  let model = [] in
+  run (generic_solver p) {n; doms; model; vlist}
 
 end

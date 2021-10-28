@@ -44,6 +44,8 @@ val (=>>) : ('env, 'res) t -> ('res -> 'res) -> ('env, 'res) t
 
 val strategy : (('env, 'res) t -> 'env -> ('env, 'res) t) -> ('env, 'res) t
 
+val bounded_strategy : max_step:int -> (('env, 'res) t -> 'env -> ('env, 'res) t) -> ('env, 'res) t
+
 val run : ('env, 'res) t -> 'env -> 'res option
 
 end = struct
@@ -104,6 +106,14 @@ let strategy (step : ('env, 'res) t -> 'env -> ('env, 'res) t) : ('env, 'res) t 
     | Update env -> go env
     | _ as ret -> ret
   in go
+
+let bounded_strategy ~max_step (step : ('env, 'res) t -> 'env -> ('env, 'res) t) : ('env, 'res) t =
+  let rec go n env =
+    if n = 0 then Abort
+    else match step (go n) env env with
+    | Update env -> go (n - 1) env
+    | _ as ret -> ret
+  in go max_step
 
 let step f = fun env -> f env env
 
