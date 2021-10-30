@@ -22,15 +22,15 @@ let num =
   let num = String.of_seq chars |> int_of_string in 
   Int num
 
-let atom = ident <|> num <|> operator <?> "atom"
+let atom = token (ident <|> num <|> operator) <?> "atom"
 
 let parens p = surround (token (char '(')) (token (char ')')) p <?> "parentheses"
 
 let sexp =
   let call sexp = let+ vals = many sexp in Cons vals in
-  fix (fun sexp -> parens (call sexp) <|> atom <?> "fix") <?> "sexp"
+  fix (fun sexp -> (parens (call sexp) <|> atom) <?> "fix") <?> "sexp"
 
-let parser = many sexp <* eof
+let parser = many sexp
 
 let of_string s = parse_string parser s
 
