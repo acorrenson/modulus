@@ -1,6 +1,6 @@
 open Modulus_lib
+open Strategy
 open Monadsat
-open SolverMonad
 
 let () = Random.self_init ()
 
@@ -14,16 +14,17 @@ let random_cnf () =
 
 let () =
   let print_result = function
-    | Some m  -> Printf.printf "  SAT : %s\n" (string_of_clause m)
-    | None    -> Printf.printf "  UNSAT\n"
+    | Some m  -> Printf.printf "  \x1b[32mSAT\x1b[0m : %s\n" (string_of_clause m)
+    | None    -> Printf.printf "  \x1b[31mUNSAT\x1b[0m\n"
   in
+  List.init 1000 (fun _ -> random_cnf ()) |>
   List.iteri (fun i cnf ->
     Printf.printf "testing unit [%d]\n" i;
     let r1 = Runtime.time (fun () -> Sat.solve cnf) in
-    let r2 = Runtime.time (fun () -> run solve cnf) in
+    let r2 = Runtime.time (fun () -> run_opt solve cnf) in
     assert (r1.result = r2.result);
-    Printf.printf "  (old) solver result [runtime : %f] : \n" r1.time;
+    Printf.printf "  (old) solver result [runtime : \x1b[33m%f\x1b[0m] : \n" r1.time;
     print_result r1.result;
-    Printf.printf "  (new) solver result [runtime : %f] : \n" r2.time;
+    Printf.printf "  (new) solver result [runtime : \x1b[33m%f\x1b[0m] : \n" r2.time;
     print_result r2.result;
-  ) (List.init 1000 (fun _ -> random_cnf ()))
+  )

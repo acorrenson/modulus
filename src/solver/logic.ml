@@ -19,6 +19,15 @@ type formula =
   | Neg of formula
   | Atom of atom
 
+let rec pp_term fmt = function
+  | Var x -> Format.fprintf fmt "%s" x
+  | Cst v -> Format.fprintf fmt "%d" v
+  | Add (t1, t2) -> Format.fprintf fmt "(%a + %a)" pp_term t1 pp_term t2
+
+let pp_atom fmt = function
+  | Eq (t1, t2) -> Format.fprintf fmt "%a = %a" pp_term t1 pp_term t2
+  | Ne (t1, t2) -> Format.fprintf fmt "%a ≠ %a" pp_term t1 pp_term t2
+
 module VSet = Set.Make (String)
 
 let neg_atom (a : atom) =

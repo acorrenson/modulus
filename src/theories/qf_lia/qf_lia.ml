@@ -7,6 +7,7 @@
 *)
 
 open Domain
+open Strategy
 
 module Interval : Domain = struct
 
@@ -99,91 +100,121 @@ let peek = function
 
 end
 
-module QfLia = struct
-  module M = Solver.Make (Interval)
-  let solve p =
-    match M.solve p with
-    | Model.UNKNOWN ->
-      Last_effort.find_model p
-    | _ as r -> r
-end
 
-module MiniLia = struct
-open Monadsat.SolverMonad
 
-type env = { n : int; doms : (Logic.term * Interval.t) list; vlist : string list; model : Model.t }
+let asp = Format.asprintf
 
-type res = Model.t
+module DomMap = struct
+type t = { n : int; doms : (Logic.term * Interval.t) list; vlist : string list; model : Model.t }
 
-type solver = (env, res) t
+let rec pp_print fmt = function
+  | [] -> ()
+  | (x, d)::next ->
+    Format.fprintf fmt "%a := %a, %a"
+      Logic.pp_term x
+      Interval.pp_print d
+      pp_print next
 
-let do_setv x d env = { env with doms = (x, d)::env.doms }, d
-let do_update x d env = { env with doms = (x, d)::(List.remove_assoc x env.doms) }
-let do_updatev x d env = do_update x d env, d
+let set_dom_aux x d env =
+  { env with doms = (x, d)::env.doms }
 
-let update_dom x d =
-  if Interval.is_empty d then 
-    fail "unsat"
-  else
-    update (do_update x d)
+let set_dom x d = update (set_dom_aux x d)
 
-let update_dom_ret x d = update_dom x d <&> return d
+let set_ret_dom x d = update_ret d (set_dom_aux x d)
 
-let rec eval (x : Logic.term) = step (fun env ->
+let rec eval (x : Logic.term) = step @@ fun env ->
+  (* asp "evaluating %a in ctx [%a...]" Logic.pp_term x pp_print env.doms <?> *)
   match List.assoc_opt x env.doms with
-  | Some v -> return v
+  | Some v ->
+    (* asp "find %a := %a" Logic.pp_term x Interval.pp_print v <?> *)
+    return v
   | None ->
     match x with
     | Var _ ->
-      update_dom_ret x Interval.top
-    | Cst v -> 
-      update_dom_ret x (Interval.singleton v)
+      (* asp "set %a := %a" Logic.pp_term x Interval.pp_print (Interval.top) <?> *)
+      set_ret_dom x Interval.top
+    | Cst v ->
+      (* asp "set %a := %a" Logic.pp_term x Interval.pp_print (Interval.singleton v) <?> *)
+      set_ret_dom x (Interval.singleton v)
     | Add (t1, t2) ->
       let* v1 = eval t1 in
       let* v2 = eval t2 in
-      update_dom_ret x (Interval.add v1 v2)
-)
+      (* asp "set %a := %a" Logic.pp_term x Interval.pp_print (Interval.add v1 v2) <?> *)
+      set_ret_dom x (Interval.add v1 v2)
+
+let update_dom x d =
+  (* asp "update %a := %a" Logic.pp_term x Interval.pp_print d <?> *)
+  let* dx = eval x in
+  let dx' = Interval.inter dx d in
+  if Interval.is_empty dx' then
+    fail "unsat"
+  else update @@ fun env ->
+    { env with doms = (x, d)::(List.remove_assoc x env.doms) }
+
+let update_ret_dom x d = update_dom x d <&> return d
+end
+
+module MiniLia = struct
+
+type solver = (DomMap.t, Model.t) t
+open DomMap
+
+let no_update = update (Fun.id)
+
+let debug = step @@ fun env ->
+  asp "In ctx [%a...]" pp_print env.doms <?> no_update
+
+let rec propagate_one_back t d =
+  let open Logic in
+  (* asp "propagating backward %a := %a" Logic.pp_term t Interval.pp_print d <?> *)
+  match t with
+  | Cst _ | Var _ -> update_dom t d
+  | Add (t1, t2) ->
+    let* d1 = eval t1 in
+    let* d2 = eval t2 in
+    let (d1', d2') = Interval.add_inv d1 d2 d in
+    propagate_one_back t1 d1' <&> propagate_one_back t2 d2'
 
 let propagate_one (a : Logic.atom) =
+  (* asp "propagating %a" Logic.pp_atom a <?> *)
   match a with
   | Logic.Eq (t1, t2) ->
     let* d1 = eval t1 in
     let* d2 = eval t2 in
     let d = Interval.inter d1 d2 in
-    update_dom t1 d <&> update_dom t2 d
+    propagate_one_back t1 d <&> propagate_one_back t2 d
   | Logic.Ne (t1, t2) ->
     let* d1 = eval t1 in
     let* d2 = eval t2 in
-    if d1 = d2 then
-      update_dom t2 (Interval.inter d1 d2)
-    else update (Fun.id)
-  
-let propagate (f : Logic.atom list) =
-  List.fold_left (<&>) (update (Fun.id)) (List.map propagate_one f)
+    if d1 = d2 then fail "unsat"
+    else no_update
 
-let decide v = update (fun env ->
+let propagate (f : Logic.atom list) =
+  (* asp "propagate" <?> *)
+  List.fold_left (<&>) no_update (List.map propagate_one f)
+
+let decide v = step (fun env ->
   let x = List.hd env.vlist in
   let xs = List.tl env.vlist in
   let dx = Interval.singleton v in
-  Printf.printf "decide %s := %d\n" x v;
-  { env with doms = (Logic.Var x, dx)::List.remove_assoc (Logic.Var x) env.doms
-  ; model = (x, v)::env.model
-  ; vlist = xs
-  }
+  (* asp "decide %s := %d" x v <?> *)
+  set { env with doms = (Logic.Var x, dx)::List.remove_assoc (Logic.Var x) env.doms
+      ; model = (x, v)::env.model
+      ; vlist = xs
+      }
 )
 
 let choice = function
-  | [] -> assert false
+  | [] -> fail "no choice"
   | x::xs -> List.fold_left (<|>) x xs
 
-let decr = update (fun env -> { env with n = env.n - 1 })
-
-let extract_model (f : Logic.atom list) = strategy (fun next {n; vlist; model; _} ->
+let rec extract_model (n : int) (f : Logic.atom list) = step @@ fun {vlist; model; _} ->
+  let next = extract_model (n/2) f in
+  let next_decision = extract_model (n - 1) f in
   if n = 0 then abort
-  else let next = decr <&> next in
-  match vlist with
+  else match vlist with
   | [] ->
-    if Checker.check_list model f then return model
+    if Checker.check_list model f then "found model !" <?> return model
     else fail "extract model"
   | x::_ ->
     let* dx = eval (Var x) in
@@ -192,19 +223,22 @@ let extract_model (f : Logic.atom list) = strategy (fun next {n; vlist; model; _
     | Split (d1, d2) ->
       let c1, c2 = Interval.peek d1, Interval.peek d2 in
       choice [
-        decide c1 <&> next;
-        decide c2 <&> next;
-        update (do_update (Var x) d1) <&> propagate f <&> next;
-        update (do_update (Var x) d2) <&> propagate f <&> next
-      ])
+        decide c1 <&> next_decision;
+        decide c2 <&> next_decision;
+        update_dom (Var x) d1 <&> propagate f <&> next;
+        update_dom (Var x) d2 <&> propagate f <&> next
+      ]
+
 let generic_solver (p : Logic.atom list) =
-  propagate p <&> extract_model p
+  propagate p <&> debug <&> extract_model 64 p
 
 let solve p =
   let vlist = Logic.lvars p in
   let doms = [] in
   let n = 10 in
   let model = [] in
-  run (generic_solver p) {n; doms; model; vlist}
-
+  match run (generic_solver p) {n; doms; model; vlist} with
+  | Fail _ -> Model.UNSAT
+  | Value m -> Model.SAT m
+  | _ -> Last_effort.find_model p
 end
