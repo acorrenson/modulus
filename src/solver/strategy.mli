@@ -61,11 +61,11 @@ val step : ('env -> ('env, 'res) t) -> ('env, 'res) t
   [step] is used to choose which strategy to apply given a current environment.
   If [f] is a function from ['env] to [('env, 'res) t] (that is, a function computing a
   strategy given an environment), then [step f] is the strategy which first apply [f] to 
-  its input environnement, and then apply the resulting strategy.
+  its input environment, and then apply the resulting strategy.
 *)
 
 val set : 'env -> ('env, 'res) t
-(** [set env] is a strategy replacing its current environnement with [env]
+(** [set env] is a strategy replacing its current environment with [env]
     and returning an update notification.
 *)
 
@@ -104,7 +104,7 @@ val (<&>) : ('env, 'res) t -> ('env, 'res) t -> ('env, 'res) t
 (**
   [s1 <&> s2] is a strategy which first applies strategy [s1] and then applies
   strategy [s2] if [s1] returned an update notification. [s2] is executed in
-  the new environnement returned by [s1].
+  the new environment returned by [s1].
 *)
 
 val map : ('res -> 'res1) -> ('env, 'res) t -> ('env, 'res1) t
@@ -123,13 +123,15 @@ val fast_map : ('res -> 'res) -> ('env, 'res) t -> ('env, 'res) t
 val (=>>) : ('env, 'res) t -> ('res -> 'res) -> ('env, 'res) t
 (** Notation for [fast_map] *)
 
-val fix : (('env, 'res) t -> 'env -> ('env, 'res) t) -> ('env, 'res) t
+val ffix : (('env, 'res) t -> 'env -> ('env, 'res) t) -> ('env, 'res) t
 (**
-  [fix] computes the fixpoint of a strategy.
+  [ffix] computes the fixpoint of a parametrized strategy.
 
   If [step] is a function computing a strategy given a strategy [recall] and a context [env],
   [fix step] computes a recursive strategy which is similar to [step] but where
   every call to the strategy [recall] are recursive calls to the strategy [step] itself.
+  The recursion continues while [step] returns an update notification.
+  It may not terminates !
 *)
 
 val run : ('env, 'res) t -> 'env -> ('env, 'res) status

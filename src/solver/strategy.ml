@@ -52,12 +52,17 @@ let[@inline] (=>) = fun m f -> map f m
 let fast_map f m = fast_bind m (fun r -> return (f r))
 let[@inline] (=>>) = fun m f -> fast_map f m
 
-let fix (step : ('env, 'res) t -> 'env -> ('env, 'res) t) : ('env, 'res) t =
+let ffix (step : ('env, 'res) t -> 'env -> ('env, 'res) t) : ('env, 'res) t =
   let rec go env =
     match step go env env with
     | Update env -> go env
     | _ as ret -> ret
   in go
+
+(* let rec fix s env =
+  match s env with
+  | Update env -> fix s env
+  | _ as ret -> ret *)
 
 let step f = fun env -> f env env
 

@@ -22,7 +22,7 @@ let add l = fun ls -> l::ls
 
 type ('a, 'b) solver = ('a, 'b) t
 
-let solve = fix @@ fun recall cnf ->
+let solve = ffix @@ fun recall cnf ->
   match cnf with
   | [] -> return []
   | []::_ -> fail "unsat"
