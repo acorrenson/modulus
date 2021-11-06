@@ -106,11 +106,16 @@ let info = Format.asprintf
   A module describing the resolution environments
 *)
 module DomMap = struct
+module Typedef = struct
+  (** A context is a record including a mapping from terms to intervals,
+    a list of unbounded variables and a partial model.
+  *)
+  type t = { doms : (Logic.term * Interval.t) list; vlist : string list; model : Model.t }
+end
 
-(** A context is a record including a mapping from terms to intervals,
-  a list of unbounded variables and a partial model.
-*)
-type t = { doms : (Logic.term * Interval.t) list; vlist : string list; model : Model.t }
+include Typedef
+module S = Strategy.Make(Typedef)
+open Minicat.Monad.Make(S)
 
 let rec pp_print fmt = function
   | [] -> ()
@@ -131,7 +136,7 @@ let set_dom x d =
 (** [eval x] is a strategy which evaluates the term [x] in the current environment.
     If [x] is not bound to a domain, [eval x] binds [x] to {!Interval.top} first.
 *)
-let rec eval (x : Logic.term) = step @@ fun env ->
+let rec eval (x : Logic.term) = S.step @@ fun env ->
   (* info "evaluating %a in ctx [%a...]" Logic.pp_term x pp_print env.doms <?> *)
   match List.assoc_opt x env.doms with
   | Some v ->
@@ -160,7 +165,7 @@ let update_dom x d =
   let* dx = eval x in
   let dx' = Interval.inter dx d in
   if Interval.is_empty dx' then
-    fail "unsat"
+    S.fail "unsat"
   else update @@ fun env ->
     { env with doms = (x, d)::(List.remove_assoc x env.doms) }
 end
@@ -170,11 +175,15 @@ end
 *)
 module MiniLia = struct
 
+open DomMap
+open DomMap.S
+open Minicat.Monad.Make(DomMap.S)
+open Minicat.Alternative.Make(DomMap.S)
+
 (** A solver is a strategy which operates on environments of type {!DomMap.t} and
   returns a {!Model.t}.
 *)
-type solver = (DomMap.t, Model.t) t
-open DomMap
+type solver = Model.t t
 
 (** A strategy doing nothing *)
 let no_update = update (Fun.id)
@@ -233,10 +242,6 @@ let decide v = step (fun env ->
       ; vlist = xs
       }
 )
-
-let choice = function
-  | [] -> fail "no choice"
-  | x::xs -> List.fold_left (<|>) x xs
 
 let rec extract_model (n : int) (f : Logic.atom list) = step @@ fun {vlist; model; _} ->
   let next = extract_model (n/2) f in
