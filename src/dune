@@ -2,4 +2,5 @@
 
 (library
  (public_name modulus.modulus_lib)
- (name modulus_lib))
+ (name modulus_lib)
+ (libraries minicat minicat_ext minilib))

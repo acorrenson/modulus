@@ -26,7 +26,7 @@ let dpllt f =
     th atoms
   in
   solve_all cnf
-  |> map (call_theory QfLia.solve)
+  |> map (call_theory MiniLia.solve)
   |> find_first_sat
   |> function
   | SAT m as res -> assert (check f m = Some true); res

@@ -108,7 +108,7 @@ let exec_one ctx sxp =
 
 let batch f =
   match Sexp.of_file f with
-  | Some (sxp, rem) when (Lazy.force rem = Nil) ->
+  | Ok sxp ->
     List.fold_left exec_one {
       tenv = Hashtbl.create 50;
       state = Start_mode;
@@ -116,19 +116,23 @@ let batch f =
       logic = ALL;
       model = UNKNOWN;
     } sxp
-  | _ -> Printf.eprintf "parse error\n"; exit 1
+  | Error (err, off) -> Printf.eprintf "%d: parse error: %s\n" off err; exit 1
 
 let repl () =
   let rec step ctx =
     flush stderr;
     Printf.printf "> ";
     match Sexp.of_string (read_line ()) with
-    | None | Some ([], _) | Some (_::_::_, _) ->
-      Printf.eprintf "(error \"this command is incorrect\")\n";
-      step ctx
-    | Some ([s], _) ->
+    | Ok [s] -> begin
       try step (exec_one ctx s)
       with Exit -> exit 0
+    end
+    | Ok _ ->
+      Printf.eprintf "(error \"This command is incorrect\")";
+      step ctx
+    | Error (err, off) ->
+      Printf.eprintf "(error %S)\n" (Printf.sprintf "Parse error: %d: %s" off err);
+      step ctx
   in
   step {
     tenv = Hashtbl.create 50;
