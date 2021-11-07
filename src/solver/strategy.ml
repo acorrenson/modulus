@@ -15,6 +15,8 @@ let contradict = fun _ -> Contradict
 
 let update up = fun env -> Update (up env)
 
+let skip = fun env -> Update env
+
 let update_ret v f = fun env -> UpdateValue (f env, v)
 
 let set env = fun _ -> Update env
@@ -61,10 +63,10 @@ let ffix (step : ('env, 'res) t -> 'env -> ('env, 'res) t) : ('env, 'res) t =
     | _ as ret -> ret
   in go
 
-(* let rec fix s env =
+let rec stabilize s env =
   match s env with
-  | Update env -> fix s env
-  | _ as ret -> ret *)
+  | Update env -> stabilize s env
+  | _ as ret -> ret
 
 let step f = fun env -> f env env
 

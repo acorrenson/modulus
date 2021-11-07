@@ -44,6 +44,8 @@ val abort : string -> ('env, 'res) t
 val contradict : ('env, 'res) t
 (** [contradict] is a strategy reporting that a contradiction has been found in context *)
 
+val skip : ('env, 'res) t
+(** a strategy doing litteraly nothing (not even a trivial update) *)
 
 val update : ('env -> 'env) -> ('env, 'res) t
 (**
@@ -133,6 +135,12 @@ val ffix : (('env, 'res) t -> 'env -> ('env, 'res) t) -> ('env, 'res) t
   every call to the strategy [recall] are recursive calls to the strategy [step] itself.
   The recursion continues while [step] returns an update notification.
   It may not terminates !
+*)
+
+val stabilize : ('env, 'res) t -> ('env, 'res) t
+(**
+  [stabilize s] is a strategy which keeps applying [s]
+  while it returns an update notification.
 *)
 
 val run : ('env, 'res) t -> 'env -> ('env, 'res) status

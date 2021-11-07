@@ -10,7 +10,7 @@ open Strategy
 (**
   Interval arithmetic over (machine) integers
 *)
-module Interval : Domain = struct
+module Interval = struct
 
 type t =
   | Top
@@ -70,8 +70,8 @@ let inter x y =
     | OpenR v, OpenR v' -> OpenR (max v v')
     | OpenL v, OpenR v' | OpenR v', OpenL v -> Intv (min v v', max v v')
     | Intv (lo, hi), Intv (lo', hi') -> Intv (max lo lo', min hi hi')
-    | OpenL v, Intv (lo, _) | Intv (lo, _), OpenL v -> OpenL (min v lo)
-    | OpenR v, Intv (_, hi) | Intv (_, hi), OpenR v -> OpenR (max v hi)
+    | OpenL v, Intv (lo, hi) | Intv (lo, hi), OpenL v -> Intv (lo, min v hi)
+    | OpenR v, Intv (lo, hi) | Intv (lo, hi), OpenR v -> Intv (max v lo, hi)
   in normalize r
 
 let neg = function
@@ -83,7 +83,7 @@ let neg = function
 
 let sub x y = add x (neg y)
 
-let add_inv x y r = (sub r y, sub r x)
+let add_inv x y r = (inter x (sub r y), inter y (sub r x))
 
 let _mid x y =
   let m = x / 2 + y / 2 in
@@ -172,6 +172,8 @@ let update_dom x d =
   let dx' = Interval.inter dx d in
   if Interval.is_empty dx' then
     contradict
+  else if dx = dx' then
+    skip
   else update @@ fun env ->
     { env with doms = (x, d)::(List.remove_assoc x env.doms) }
 end
@@ -187,12 +189,10 @@ module MiniLia = struct
 type solver = (DomMap.t, Model.t) t
 open DomMap
 
-(** A strategy doing nothing *)
-let no_update = update (Fun.id)
-
 (** A strategy printing its current environment *)
-let debug = step @@ fun env ->
-  info "In ctx [%a...]" pp_print env.doms <?> no_update
+let debug : (DomMap.t, Model.t) Strategy.t = step @@ fun env ->
+  let str = String.concat " " env.vlist in
+  info "In ctx [%a...]\n(vlist := %s)\n" pp_print env.doms str <?> skip
 
 (** A strategy performing backward propagation.
     [propagate_one_back t d] assumes that term [t] should evaluates to domain [d]
@@ -200,7 +200,8 @@ let debug = step @@ fun env ->
 *)
 let rec propagate_one_back t d =
   let open Logic in
-  info "propagating backward %a := %a" Logic.pp_term t Interval.pp_print d <?>
+  (* info "propagating backward %a := %a" Logic.pp_term t Interval.pp_print d <?> *)
+  (* debug <&> *)
   match t with
   | Cst _ | Var _ -> update_dom t d
   | Add (t1, t2) ->
@@ -215,7 +216,7 @@ let rec propagate_one_back t d =
     It may fails if the constraints [c] is insatisfiable in the context.
 *)
 let propagate_one (a : Logic.atom) =
-  info "propagating %a" Logic.pp_atom a <?>
+  (* info "propagating %a" Logic.pp_atom a <?> *)
   match a with
   | Logic.Eq (t1, t2) ->
     let* d1 = eval t1 in
@@ -226,24 +227,22 @@ let propagate_one (a : Logic.atom) =
     let* d1 = eval t1 in
     let* d2 = eval t2 in
     if d1 = d2 then contradict
-    else no_update
+    else skip
 
 (** [propagate f] is a strategy
 *)
 let propagate (f : Logic.atom list) =
   (* info "propagate" <?> *)
-  List.fold_left (<&>) no_update (List.map propagate_one f)
+  List.fold_left (<&>) skip (List.map propagate_one f)
 
-let decide v = step (fun env ->
-  let x = List.hd env.vlist in
-  let xs = List.tl env.vlist in
+let decide x v =
   let dx = Interval.singleton v in
   (* info "decide %s := %d" x v <?> *)
-  set { doms = (Logic.Var x, dx)::List.remove_assoc (Logic.Var x) env.doms
-      ; model = (x, v)::env.model
-      ; vlist = xs
-      }
-)
+  update_dom (Var x) dx <&>
+  update @@ fun env ->
+    { env with model = (x, v)::env.model
+    ; vlist = List.tl env.vlist
+    }
 
 let choice = function
   | [] -> abort "no choice"
@@ -260,12 +259,12 @@ let rec extract_model (n : int) (f : Logic.atom list) = step @@ fun {vlist; mode
   | x::_ ->
     let* dx = eval (Var x) in
     match Interval.split dx with
-    | Single v -> decide v <&> next
+    | Single v -> decide x v <&> next
     | Split (d1, d2) ->
       let c1, c2 = Interval.peek d1, Interval.peek d2 in
       choice [
-        decide c1 <&> next_decision;
-        decide c2 <&> next_decision;
+        decide x c1 <&> propagate f <&> next_decision;
+        decide x c2 <&> propagate f <&> next_decision;
         update_dom (Var x) d1 <&> propagate f <&> next;
         update_dom (Var x) d2 <&> propagate f <&> next
       ]
