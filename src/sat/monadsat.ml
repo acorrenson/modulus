@@ -25,7 +25,7 @@ type ('a, 'b) solver = ('a, 'b) t
 let solve = ffix @@ fun recall cnf ->
   match cnf with
   | [] -> return []
-  | []::_ -> fail "unsat"
+  | []::_ -> contradict
   | (l::_)::_ ->
     (propagate l <&> recall =>> add l)
     <|>

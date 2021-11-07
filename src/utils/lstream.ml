@@ -46,12 +46,21 @@ let rec flat_map (f : 'a -> 'b t) (l : 'a t) : 'b t =
       Lazy.force (append (f x) (flat_map f xs))
     end
 
-let rec find_first ~default (f : 'a -> bool) (s : 'a t) : 'a =
+let rec filter (f : 'a -> bool) (s : 'a t) : 'a t =
+  lazy begin
+    match Lazy.force s with
+    | Cons (x, xs) ->
+      if f x then Cons (x, filter f xs)
+      else Lazy.force (filter f xs)
+    | Nil -> Nil
+  end
+
+let rec find_first (f : 'a -> bool) (s : 'a t) : 'a option =
   match Lazy.force s with
-  | Nil -> default
+  | Nil -> None
   | Cons (x, next) ->
-    if f x then x
-    else find_first f ~default next
+    if f x then Some x
+    else find_first f next
 
 let of_stream (s : 'a Stream.t) =
   let rec step s =

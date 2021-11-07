@@ -7,6 +7,9 @@
 open Domain
 open Strategy
 
+(**
+  Interval arithmetic over (machine) integers
+*)
 module Interval : Domain = struct
 
 type t =
@@ -30,6 +33,14 @@ let to_string = function
   | OpenL v -> Printf.sprintf "]-∞; %d]" v
   | OpenR v -> Printf.sprintf "[%d; +∞[" v
   | Intv (lo, hi) -> Printf.sprintf "[%d; %d]" lo hi
+
+let filter d n =
+  match d with
+  | Top -> true
+  | Bot -> false
+  | OpenL v -> n <= v
+  | OpenR v -> v <= n
+  | Intv (lo, hi) -> lo <= n && n <= hi
 
 let pp_print fmt x = Format.fprintf fmt "%s" (to_string x)
 
@@ -160,7 +171,7 @@ let update_dom x d =
   let* dx = eval x in
   let dx' = Interval.inter dx d in
   if Interval.is_empty dx' then
-    fail "unsat"
+    contradict
   else update @@ fun env ->
     { env with doms = (x, d)::(List.remove_assoc x env.doms) }
 end
@@ -189,7 +200,7 @@ let debug = step @@ fun env ->
 *)
 let rec propagate_one_back t d =
   let open Logic in
-  (* info "propagating backward %a := %a" Logic.pp_term t Interval.pp_print d <?> *)
+  info "propagating backward %a := %a" Logic.pp_term t Interval.pp_print d <?>
   match t with
   | Cst _ | Var _ -> update_dom t d
   | Add (t1, t2) ->
@@ -204,7 +215,7 @@ let rec propagate_one_back t d =
     It may fails if the constraints [c] is insatisfiable in the context.
 *)
 let propagate_one (a : Logic.atom) =
-  (* info "propagating %a" Logic.pp_atom a <?> *)
+  info "propagating %a" Logic.pp_atom a <?>
   match a with
   | Logic.Eq (t1, t2) ->
     let* d1 = eval t1 in
@@ -214,7 +225,7 @@ let propagate_one (a : Logic.atom) =
   | Logic.Ne (t1, t2) ->
     let* d1 = eval t1 in
     let* d2 = eval t2 in
-    if d1 = d2 then fail "unsat"
+    if d1 = d2 then contradict
     else no_update
 
 (** [propagate f] is a strategy
@@ -235,17 +246,17 @@ let decide v = step (fun env ->
 )
 
 let choice = function
-  | [] -> fail "no choice"
+  | [] -> abort "no choice"
   | x::xs -> List.fold_left (<|>) x xs
 
 let rec extract_model (n : int) (f : Logic.atom list) = step @@ fun {vlist; model; _} ->
   let next = extract_model (n/2) f in
   let next_decision = extract_model (n - 1) f in
-  if n = 0 then abort
+  if n = 0 then abort "step limit reached"
   else match vlist with
   | [] ->
-    if Checker.check_list model f then return model
-    else fail "extract model"
+    if Checker.check_list f model then return model
+    else abort "invalid model"
   | x::_ ->
     let* dx = eval (Var x) in
     match Interval.split dx with
@@ -259,15 +270,29 @@ let rec extract_model (n : int) (f : Logic.atom list) = step @@ fun {vlist; mode
         update_dom (Var x) d2 <&> propagate f <&> next
       ]
 
+let last_effort (n : int) (f : Logic.atom list) = step @@ fun {doms; _} ->
+  let compute_filter v =
+    List.assoc_opt (Logic.Var v) doms |> Option.map Interval.filter
+  in
+  let filters =
+    List.map (fun v -> v, compute_filter v) (Logic.lvars f)
+  in
+  match Enumerate.find_model (Some filters) n f with
+  | Some m -> return m
+  | None -> abort "step limit reached"
+
 let generic_solver (p : Logic.atom list) =
-  propagate p <&> extract_model 16 p
+  propagate p
+  <&> propagate p
+  <&> extract_model 16 p
+  <&> last_effort 16 p
 
 let solve p =
   let vlist = Logic.lvars p in
   let doms = [] in
   let model = [] in
   match run (generic_solver p) { doms; model; vlist } with
-  | Fail _ -> Model.UNSAT
+  | Contradict -> Model.UNSAT
   | Value m -> Model.SAT m
-  | _ -> Last_effort.find_model p
+  | _ -> Model.UNKNOWN
 end

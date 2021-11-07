@@ -13,8 +13,8 @@
 *)
 
 type ('env, 'res) status =
-  | Fail of string
-  | Abort
+  | Abort of string
+  | Contradict
   | Update of 'env
   | UpdateValue of 'env * 'res
   | Value of 'res
@@ -38,11 +38,12 @@ type ('env, 'res) t
 val return : 'res -> ('env, 'res) t
 (** [return v] is a trivial strategy always returning [v] *)
 
-val fail : string -> ('env, 'res) t
-(** [fail err] is a trivial strategy always failing with error message [err] *)
+val abort : string -> ('env, 'res) t
+(** [abort err] is a trivial strategy always failing with error message [err] *)
 
-val abort : ('env, 'res) t
-(** [abort] is a trivial strategy always returning an interruption notification *)
+val contradict : ('env, 'res) t
+(** [contradict] is a strategy reporting that a contradiction has been found in context *)
+
 
 val update : ('env -> 'env) -> ('env, 'res) t
 (**
