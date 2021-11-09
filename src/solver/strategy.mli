@@ -1,6 +1,6 @@
 (**
   This module provides utilities to define new resolution strategies.
-  We introduce a monad [('env, 'res) Strategy.t] to build customized solvers.
+  We introduce a monad [('env, 'res) Strategy.t] to build custom solvers.
 
   Intuitively, a value of type [('env, 'res) Strategy.t] is a function from ['env -> 'res]
   where ['env] is the type of resolution contexts and ['res] is the result of the strategy.
@@ -22,14 +22,15 @@ type ('env, 'res) status =
   Status message reported by strategies.
   The status is either:
   {ul
-    {- A failure with a message }
+    {- A failure with a message indicating an early interuption of the strategy }
+    {- A contraidiction notification : a contradiction has been found in the current environment }
     {- A value indicating that the strategy successfully computed a result }
-    {- An update notification indicating that the strategy is not done }
+    {- An update notification indicating that the strategy is not done but
+      has found some information to enrich the resolution context }
     {- An update notification together with an intermediate value.
       This indicate that the strategy computed an intermediate value [v]
-      and updated the environment. It is especially useful to compose intermediate steps.
+      and updated the context. It is especially useful to compose intermediate steps.
     }
-    {- A forced interruption of the strategy }
   }
 *)
 
@@ -45,7 +46,9 @@ val contradict : ('env, 'res) t
 (** [contradict] is a strategy reporting that a contradiction has been found in context *)
 
 val skip : ('env, 'res) t
-(** a strategy doing litteraly nothing (not even a trivial update) *)
+(** a strategy doing litteraly nothing. It returns an update notification
+    but the environment thus provided is unchanged.
+*)
 
 val update : ('env -> 'env) -> ('env, 'res) t
 (**
@@ -67,16 +70,14 @@ val step : ('env -> ('env, 'res) t) -> ('env, 'res) t
   its input environment, and then apply the resulting strategy.
 *)
 
-val set : 'env -> ('env, 'res) t
-(** [set env] is a strategy replacing its current environment with [env]
-    and returning an update notification.
-*)
-
 val bind : ('env, 'res) t -> ('res -> ('env, 'res2) t) -> ('env, 'res2) t
 (**
   [bind s f] first applies strategy [s]. If the result is a value [v],
   then the strategy [f v] is applied, otherwise the 
   status message of [s] is propagated.
+
+  Note that if [s] returns an update notification together with an intermediate value [v],
+  [f v] is then executed in the newly updated environment.
 *)
 
 val (let*) : ('env, 'res) t -> ('res -> ('env, 'res2) t) -> ('env, 'res2) t
@@ -94,7 +95,7 @@ val (let+) : ('env, 'res) t -> ('res -> ('env, 'res) t) -> ('env, 'res) t
 val (<|>) : ('env, 'res) t -> ('env, 'res) t -> ('env, 'res) t
 (**
   [s1 <|> s2] is the strategy which first tries to apply strategy [s1]
-  and then apply strategy [s2] is strategy [s1] failed.
+  and then apply strategy [s2] is strategy [s1] fail or report a contradiction.
 *)
 
 val (<?>) : string -> ('env, 'res) t -> ('env, 'res) t
@@ -106,8 +107,9 @@ val (<?>) : string -> ('env, 'res) t -> ('env, 'res) t
 val (<&>) : ('env, 'res) t -> ('env, 'res) t -> ('env, 'res) t
 (**
   [s1 <&> s2] is a strategy which first applies strategy [s1] and then applies
-  strategy [s2] if [s1] returned an update notification. [s2] is executed in
-  the new environment returned by [s1].
+  strategy [s2] if [s1] returns an update notification or a failure. In case 
+  [s1] returned an update notification, [s2] is executed in
+  the updated environment.
 *)
 
 val map : ('res -> 'res1) -> ('env, 'res) t -> ('env, 'res1) t

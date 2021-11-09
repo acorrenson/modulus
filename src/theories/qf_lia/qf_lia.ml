@@ -10,7 +10,10 @@ open Strategy
 (**
   Interval arithmetic over (machine) integers
 *)
-module Interval = struct
+module Interval : sig
+  include Domain
+  val eq_singleton : t -> t -> bool
+end = struct
 
 type t =
   | Top
@@ -26,6 +29,11 @@ let bot = Bot
 let is_empty x = x = Bot
 
 let singleton v = Intv (v, v)
+
+let eq_singleton x y =
+  match x, y with
+  | Intv (v1, v1'), Intv (v2, v2') when v1 = v1' && v2 = v2' -> true
+  | _ -> false
 
 let to_string = function
   | Top -> "⊤"
@@ -135,9 +143,9 @@ let rec pp_print fmt = function
     assuming [x] was unbound. This strategy returns [d] as return value.
 *)
 let set_dom x d =
-  let set_dom_aux x d env =
+  let set_dom_aux env =
     { env with doms = (x, d)::env.doms }
-  in update_ret d (set_dom_aux x d)
+  in update_ret d set_dom_aux
 
 (** [eval x] is a strategy which evaluates the term [x] in the current environment.
     If [x] is not bound to a domain, [eval x] binds [x] to {!Interval.top} first.
@@ -175,7 +183,7 @@ let update_dom x d =
   else if dx = dx' then
     skip
   else update @@ fun env ->
-    { env with doms = (x, d)::(List.remove_assoc x env.doms) }
+    { env with doms = (x, dx')::(List.remove_assoc x env.doms) }
 end
 
 (**
@@ -202,6 +210,7 @@ let rec propagate_one_back t d =
   let open Logic in
   (* info "propagating backward %a := %a" Logic.pp_term t Interval.pp_print d <?> *)
   (* debug <&> *)
+  if Interval.is_empty d then contradict else
   match t with
   | Cst _ | Var _ -> update_dom t d
   | Add (t1, t2) ->
@@ -222,22 +231,21 @@ let propagate_one (a : Logic.atom) =
     let* d1 = eval t1 in
     let* d2 = eval t2 in
     let d = Interval.inter d1 d2 in
+
     propagate_one_back t1 d <&> propagate_one_back t2 d
   | Logic.Ne (t1, t2) ->
     let* d1 = eval t1 in
     let* d2 = eval t2 in
-    if d1 = d2 then contradict
+    if Interval.eq_singleton d1 d2 then contradict
     else skip
 
-(** [propagate f] is a strategy
-*)
+(** [propagate f] is a strategy which perform contraint propagations *)
 let propagate (f : Logic.atom list) =
   (* info "propagate" <?> *)
   List.fold_left (<&>) skip (List.map propagate_one f)
 
 let decide x v =
   let dx = Interval.singleton v in
-  (* info "decide %s := %d" x v <?> *)
   update_dom (Var x) dx <&>
   update @@ fun env ->
     { env with model = (x, v)::env.model

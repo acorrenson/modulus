@@ -19,8 +19,6 @@ let skip = fun env -> Update env
 
 let update_ret v f = fun env -> UpdateValue (f env, v)
 
-let set env = fun _ -> Update env
-
 let[@inline] bind m f = fun env ->
   match m env with
   | Contradict -> Contradict
