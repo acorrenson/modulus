@@ -9,3 +9,9 @@
  (public_name test)
  (libraries modulus_lib)
  (modules test))
+
+(executable
+ (name bench)
+ (public_name bench)
+ (libraries modulus_lib)
+ (modules bench))

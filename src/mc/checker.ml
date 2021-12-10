@@ -14,7 +14,7 @@ let check_atom (e : t) (atm : atom) : bool =
       Some (v1 = v2)
     end
 
-let check_list (e : t) (l : atom list) : bool =
+let check_list (l : atom list) (e : t) : bool =
   List.for_all (check_atom e) l
 
 let rec check (e : t) (f : formula) : bool =
